@@ -1,5 +1,13 @@
 <?php
 
+// Serveur PHP built-in : laisser servir les fichiers statiques directement
+if (php_sapi_name() === 'cli-server') {
+    $file = __DIR__ . parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    if (is_file($file)) {
+        return false;
+    }
+}
+
 /**
  * Point d'entrée unique de l'application (front controller).
  *
@@ -55,7 +63,7 @@ try {
         (new \App\Controller\ApiController())->compare();
     } elseif ($path === '/api/sync-logs') {
         (new \App\Controller\ApiController())->syncLogs();
-    } elseif ($path === '/api/sync' && $method === 'POST') {
+    } elseif ($path === '/api/sync' && in_array($method, ['POST', 'GET'])) {
         (new \App\Controller\ApiController())->triggerSync();
     } elseif ($path === '/api/sync-progress') {
         (new \App\Controller\ApiController())->syncProgress();

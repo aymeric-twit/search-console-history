@@ -62,6 +62,12 @@ class SyncController
     {
         $results = [];
 
+        // Nettoyer les sync_logs orphelins (process crashes precedents)
+        $cleaned = $this->syncLog->cleanupOrphans();
+        if ($cleaned > 0) {
+            $this->log("Nettoyage : {$cleaned} sync_log(s) orphelin(s) marqué(s) en erreur.");
+        }
+
         // Import des sites depuis l'API si demandé
         if ($importSites) {
             $this->importSites();

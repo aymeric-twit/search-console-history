@@ -183,4 +183,19 @@ class SyncLog
 
         return $row ?: null;
     }
+
+    /** Nettoie les sync_logs orphelins (running sans process actif). */
+    public function cleanupOrphans(): int
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE sync_logs
+             SET status = "error",
+                 error_message = "Process interrompu (cleanup automatique)",
+                 finished_at = NOW()
+             WHERE status = "running"'
+        );
+        $stmt->execute();
+
+        return $stmt->rowCount();
+    }
 }

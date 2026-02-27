@@ -52,43 +52,23 @@ ob_start();
 <div class="kpi-grid">
     <div class="kpi-card">
         <div class="label">Clicks</div>
-        <div class="value"><?= number_format((int)($totals['clicks'] ?? 0), 0, ',', ' ') ?></div>
-        <?php if ($comparison): ?>
-            <?php $d = $comparison['diff']['clicks']; ?>
-            <div class="diff <?= $d >= 0 ? 'positive' : 'negative' ?>">
-                <?= $d >= 0 ? '+' : '' ?><?= number_format($d, 0, ',', ' ') ?> vs periode prec.
-            </div>
-        <?php endif; ?>
+        <div class="value" id="kpi-clicks">...</div>
+        <div class="diff" id="kpi-clicks-diff"></div>
     </div>
     <div class="kpi-card">
         <div class="label">Impressions</div>
-        <div class="value"><?= number_format((int)($totals['impressions'] ?? 0), 0, ',', ' ') ?></div>
-        <?php if ($comparison): ?>
-            <?php $d = $comparison['diff']['impressions']; ?>
-            <div class="diff <?= $d >= 0 ? 'positive' : 'negative' ?>">
-                <?= $d >= 0 ? '+' : '' ?><?= number_format($d, 0, ',', ' ') ?>
-            </div>
-        <?php endif; ?>
+        <div class="value" id="kpi-impressions">...</div>
+        <div class="diff" id="kpi-impressions-diff"></div>
     </div>
     <div class="kpi-card">
         <div class="label">CTR moyen</div>
-        <div class="value"><?= number_format(($totals['ctr'] ?? 0) * 100, 2, ',', ' ') ?>%</div>
-        <?php if ($comparison): ?>
-            <?php $d = $comparison['diff']['ctr'] * 100; ?>
-            <div class="diff <?= $d >= 0 ? 'positive' : 'negative' ?>">
-                <?= $d >= 0 ? '+' : '' ?><?= number_format($d, 2, ',', ' ') ?> pts
-            </div>
-        <?php endif; ?>
+        <div class="value" id="kpi-ctr">...</div>
+        <div class="diff" id="kpi-ctr-diff"></div>
     </div>
     <div class="kpi-card">
         <div class="label">Position moyenne</div>
-        <div class="value"><?= number_format($totals['position'] ?? 0, 1, ',', ' ') ?></div>
-        <?php if ($comparison): ?>
-            <?php $d = $comparison['diff']['position']; ?>
-            <div class="diff <?= $d <= 0 ? 'positive' : 'negative' ?>">
-                <?= $d >= 0 ? '+' : '' ?><?= number_format($d, 1, ',', ' ') ?>
-            </div>
-        <?php endif; ?>
+        <div class="value" id="kpi-position">...</div>
+        <div class="diff" id="kpi-position-diff"></div>
     </div>
 </div>
 
@@ -124,19 +104,8 @@ ob_start();
                     <th>Position</th>
                 </tr>
             </thead>
-            <tbody>
-                <?php foreach ($topQueries as $q): ?>
-                <tr>
-                    <td class="truncate"><?= htmlspecialchars($q['query']) ?></td>
-                    <td class="num"><?= number_format((int)$q['clicks'], 0, ',', ' ') ?></td>
-                    <td class="num"><?= number_format((int)$q['impressions'], 0, ',', ' ') ?></td>
-                    <td class="num"><?= number_format($q['ctr'] * 100, 2) ?>%</td>
-                    <td class="num"><?= number_format($q['position'], 1) ?></td>
-                </tr>
-                <?php endforeach; ?>
-                <?php if (empty($topQueries)): ?>
-                <tr><td colspan="5" style="text-align:center;color:#999">Aucune donnee</td></tr>
-                <?php endif; ?>
+            <tbody id="queries-body">
+                <tr><td colspan="5" style="text-align:center;color:#999">Chargement...</td></tr>
             </tbody>
         </table>
     </div>
@@ -153,33 +122,151 @@ ob_start();
                     <th>Position</th>
                 </tr>
             </thead>
-            <tbody>
-                <?php foreach ($topPages as $p): ?>
-                <tr>
-                    <td class="truncate"><?= htmlspecialchars($p['page']) ?></td>
-                    <td class="num"><?= number_format((int)$p['clicks'], 0, ',', ' ') ?></td>
-                    <td class="num"><?= number_format((int)$p['impressions'], 0, ',', ' ') ?></td>
-                    <td class="num"><?= number_format($p['ctr'] * 100, 2) ?>%</td>
-                    <td class="num"><?= number_format($p['position'], 1) ?></td>
-                </tr>
-                <?php endforeach; ?>
-                <?php if (empty($topPages)): ?>
-                <tr><td colspan="5" style="text-align:center;color:#999">Aucune donnee</td></tr>
-                <?php endif; ?>
+            <tbody id="pages-body">
+                <tr><td colspan="5" style="text-align:center;color:#999">Chargement...</td></tr>
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- Injection des données pour Chart.js -->
+<!-- Parametres pour le JS -->
 <script>
-window.dashboardData = {
-    dailyTrend: <?= json_encode($dailyTrend, JSON_UNESCAPED_UNICODE) ?>,
-    devices:    <?= json_encode($devices, JSON_UNESCAPED_UNICODE) ?>,
-    countries:  <?= json_encode($countries, JSON_UNESCAPED_UNICODE) ?>
+window.dashboardParams = {
+    siteId: <?= (int)$siteId ?>,
+    from: '<?= htmlspecialchars($from) ?>',
+    to: '<?= htmlspecialchars($to) ?>',
+    searchType: '<?= htmlspecialchars($filters['search_type'] ?? 'web') ?>',
+    device: '<?= htmlspecialchars($filters['device'] ?? '') ?>',
+    country: '<?= htmlspecialchars($filters['country'] ?? '') ?>',
+    filterQuery: '<?= htmlspecialchars($filters['query'] ?? '') ?>',
+    filterPage: '<?= htmlspecialchars($filters['page'] ?? '') ?>'
 };
+window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
 </script>
 <script src="/assets/js/dashboard.js"></script>
+<script>
+(function() {
+    var p = window.dashboardParams;
+    if (!p.siteId) return;
+
+    var qs = 'site_id=' + p.siteId + '&from=' + p.from + '&to=' + p.to
+        + '&search_type=' + encodeURIComponent(p.searchType)
+        + (p.device ? '&device=' + encodeURIComponent(p.device) : '')
+        + (p.country ? '&country=' + encodeURIComponent(p.country) : '')
+        + (p.filterQuery ? '&filter_query=' + encodeURIComponent(p.filterQuery) : '')
+        + (p.filterPage ? '&filter_page=' + encodeURIComponent(p.filterPage) : '');
+
+    function fmt(n) { return Number(n || 0).toLocaleString('fr-FR'); }
+    function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    // Charger KPIs + comparaison
+    fetch('/api/compare?' + qs.replace('from=', 'from1=').replace('to=', 'to1=')
+        + '&from2=' + encodeURIComponent(prevFrom(p.from, p.to))
+        + '&to2=' + encodeURIComponent(prevTo(p.from)))
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var c = data.current || {};
+            var d = data.diff || {};
+            document.getElementById('kpi-clicks').textContent = fmt(c.clicks);
+            document.getElementById('kpi-impressions').textContent = fmt(c.impressions);
+            document.getElementById('kpi-ctr').textContent = ((c.ctr || 0) * 100).toFixed(2).replace('.', ',') + '%';
+            document.getElementById('kpi-position').textContent = (c.position || 0).toFixed(1).replace('.', ',');
+            setDiff('kpi-clicks-diff', d.clicks, false);
+            setDiff('kpi-impressions-diff', d.impressions, false);
+            setDiff('kpi-ctr-diff', d.ctr * 100, false, ' pts', 2);
+            setDiff('kpi-position-diff', d.position, true, '', 1);
+        });
+
+    // Charger tendance quotidienne
+    fetch('/api/daily-trend?' + qs)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            window.dashboardData.dailyTrend = data;
+            if (typeof window.renderTrendChart === 'function') window.renderTrendChart(data);
+        });
+
+    // Charger appareils
+    fetch('/api/devices?' + qs)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            window.dashboardData.devices = data;
+            if (typeof window.renderDeviceChart === 'function') window.renderDeviceChart(data);
+        });
+
+    // Charger pays
+    fetch('/api/countries?' + qs)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            window.dashboardData.countries = data;
+            if (typeof window.renderCountryChart === 'function') window.renderCountryChart(data);
+        });
+
+    // Charger top requetes
+    fetch('/api/top-queries?' + qs + '&limit=20')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var tbody = document.getElementById('queries-body');
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999">Aucune donnee</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(function(q) {
+                return '<tr>'
+                    + '<td class="truncate">' + escapeHtml(q.query) + '</td>'
+                    + '<td class="num">' + fmt(q.clicks) + '</td>'
+                    + '<td class="num">' + fmt(q.impressions) + '</td>'
+                    + '<td class="num">' + (q.ctr * 100).toFixed(2) + '%</td>'
+                    + '<td class="num">' + Number(q.position).toFixed(1) + '</td>'
+                    + '</tr>';
+            }).join('');
+        });
+
+    // Charger top pages
+    fetch('/api/top-pages?' + qs + '&limit=20')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var tbody = document.getElementById('pages-body');
+            if (!data.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999">Aucune donnee</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.map(function(pg) {
+                return '<tr>'
+                    + '<td class="truncate">' + escapeHtml(pg.page) + '</td>'
+                    + '<td class="num">' + fmt(pg.clicks) + '</td>'
+                    + '<td class="num">' + fmt(pg.impressions) + '</td>'
+                    + '<td class="num">' + (pg.ctr * 100).toFixed(2) + '%</td>'
+                    + '<td class="num">' + Number(pg.position).toFixed(1) + '</td>'
+                    + '</tr>';
+            }).join('');
+        });
+
+    function setDiff(id, val, invertColor, suffix, decimals) {
+        var el = document.getElementById(id);
+        if (!el || val === undefined || val === null) return;
+        decimals = decimals !== undefined ? decimals : 0;
+        suffix = suffix || '';
+        var n = Number(val);
+        var sign = n >= 0 ? '+' : '';
+        el.textContent = sign + n.toFixed(decimals).replace('.', ',') + suffix + ' vs periode prec.';
+        var positive = invertColor ? n <= 0 : n >= 0;
+        el.className = 'diff ' + (positive ? 'positive' : 'negative');
+    }
+
+    function prevFrom(from, to) {
+        var days = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
+        var d = new Date(from);
+        d.setDate(d.getDate() - days);
+        return d.toISOString().slice(0, 10);
+    }
+
+    function prevTo(from) {
+        var d = new Date(from);
+        d.setDate(d.getDate() - 1);
+        return d.toISOString().slice(0, 10);
+    }
+})();
+</script>
 
 <?php
 $content = ob_get_clean();

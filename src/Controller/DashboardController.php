@@ -43,16 +43,23 @@ class DashboardController
         $to   = $_GET['to']   ?? date('Y-m-d', strtotime('-3 days'));
         $from = $_GET['from'] ?? date('Y-m-d', strtotime("{$to} -29 days"));
 
-        // Filtres
+        // Filtres — search_type par defaut 'web' pour limiter le volume de donnees
         $filters = array_filter([
             'device'      => $_GET['device']      ?? '',
             'country'     => $_GET['country']      ?? '',
-            'search_type' => $_GET['search_type']  ?? '',
+            'search_type' => $_GET['search_type']  ?? 'web',
             'query'       => $_GET['filter_query'] ?? '',
             'page'        => $_GET['filter_page']  ?? '',
         ]);
 
-        // Données pour le dashboard
+        // Le dashboard charge les donnees en AJAX via /api/* pour eviter
+        // de bloquer le rendu initial (les requetes sont lourdes sur 27M+ lignes)
+        $dateRange = ['min_date' => null, 'max_date' => null];
+        if ($siteId > 0) {
+            $dateRange = $this->perfModel->dateRange($siteId);
+        }
+
+        // Variables transmises au template (les donnees arrivent en JS)
         $dailyTrend  = [];
         $topQueries  = [];
         $topPages    = [];
@@ -60,23 +67,6 @@ class DashboardController
         $countries   = [];
         $totals      = ['clicks' => 0, 'impressions' => 0, 'ctr' => 0, 'position' => 0];
         $comparison  = null;
-        $dateRange   = ['min_date' => null, 'max_date' => null];
-
-        if ($siteId > 0) {
-            $dailyTrend = $this->perfModel->getDailyTrend($siteId, $from, $to, $filters);
-            $topQueries = $this->perfModel->topQueries($siteId, $from, $to, 20, $filters);
-            $topPages   = $this->perfModel->topPages($siteId, $from, $to, 20, $filters);
-            $devices    = $this->perfModel->byDevice($siteId, $from, $to, $filters);
-            $countries  = $this->perfModel->byCountry($siteId, $from, $to, 10, $filters);
-            $totals     = $this->perfModel->periodTotals($siteId, $from, $to, $filters);
-            $dateRange  = $this->perfModel->dateRange($siteId);
-
-            // Comparaison avec la période précédente (même durée)
-            $days  = (int) ((strtotime($to) - strtotime($from)) / 86400) + 1;
-            $from2 = date('Y-m-d', strtotime("{$from} -{$days} days"));
-            $to2   = date('Y-m-d', strtotime("{$from} -1 day"));
-            $comparison = $this->perfModel->comparePeriods($siteId, $from, $to, $from2, $to2, $filters);
-        }
 
         require __DIR__ . '/../../templates/dashboard.php';
     }
