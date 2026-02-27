@@ -94,10 +94,24 @@ class GoogleOAuth
         return $this->client;
     }
 
-    /** Vérifie si un token est stocké en base. */
+    /** Vérifie si un token valide est disponible (refresh si expire). */
     public function hasToken(): bool
     {
-        return $this->loadToken() !== null;
+        $token = $this->loadToken();
+        if (!$token) {
+            return false;
+        }
+
+        // Si le token est expire, tenter un refresh silencieux
+        if (strtotime($token['expires_at']) <= time() && !empty($token['refresh_token'])) {
+            try {
+                $this->getAuthenticatedClient();
+            } catch (\Throwable $e) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /** Supprime tous les tokens (déconnexion). */
