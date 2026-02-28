@@ -1,6 +1,10 @@
 # Google Search Console — Dashboard & Data Sync
 
+> PHP application that automatically syncs Google Search Console performance data into a MySQL database and exposes an interactive analytics dashboard.
+
 Application PHP qui synchronise automatiquement les donnees de performance Google Search Console dans une base MySQL et expose un tableau de bord analytique.
+
+---
 
 ## Fonctionnalites
 
@@ -15,12 +19,43 @@ Application PHP qui synchronise automatiquement les donnees de performance Googl
 - **Retry automatique** avec back-off exponentiel en cas d'erreur API
 - **Historisation complete** (les donnees GSC ne sont disponibles que ~16 mois)
 
+---
+
+## Stack technique
+
+| Composant | Detail |
+|-----------|--------|
+| **Langage** | PHP >= 8.1 |
+| **Base de donnees** | MySQL >= 5.7 / MariaDB >= 10.3 |
+| **Autoload** | PSR-4 — namespace `App\` → `src/` |
+| **google/apiclient** | ^2.15 — SDK Google (OAuth2 + Search Console API) |
+| **vlucas/phpdotenv** | ^5.6 — Chargement `.env` |
+| **Chart.js** | Dashboard — graphiques interactifs |
+| **Bootstrap 5** | Interface du dashboard |
+
+---
+
+## Integration plateforme
+
+| Champ | Valeur |
+|-------|--------|
+| **display_mode** | `passthrough` — l'application gere son propre routage complet |
+| **quota_mode** | `none` — pas de limitation d'usage |
+| **entry_point** | `adapter.php` — routeur interne (pont plateforme → controllers) |
+| **env_keys** | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` |
+
+Le fichier `boot.php` charge l'autoloader Composer, definit `MODULE_URL_PREFIX` = `/m/search-console` et configure le timezone. Le fichier `adapter.php` parse l'URI, strip le prefixe plateforme et dispatch vers les controllers internes.
+
+---
+
 ## Prerequis
 
 - PHP >= 8.1 avec extensions `pdo_mysql`, `curl`, `json`
 - MySQL >= 5.7 ou MariaDB >= 10.3
 - Composer
 - Un projet Google Cloud avec l'API Search Console activee
+
+---
 
 ## Installation
 
@@ -87,6 +122,8 @@ php -S localhost:8080 -t public
 
 Ouvrir `http://localhost:8080` dans le navigateur et cliquer sur "Se connecter avec Google".
 
+---
+
 ## Synchronisation des donnees
 
 ### Manuellement
@@ -121,6 +158,8 @@ Ou directement :
 0 6 * * * /usr/bin/php /chemin/vers/search-console/bin/sync.php >> /chemin/vers/search-console/storage/sync.log 2>&1
 ```
 
+---
+
 ## API JSON
 
 Tous les endpoints acceptent les parametres `site_id`, `from`, `to` et les filtres optionnels (`device`, `country`, `search_type`, `filter_query`, `filter_page`).
@@ -143,6 +182,8 @@ Tous les endpoints acceptent les parametres `site_id`, `from`, `to` et les filtr
 ```bash
 curl "http://localhost:8080/api/top-queries?site_id=1&from=2025-01-01&to=2025-01-31&limit=10"
 ```
+
+---
 
 ## Structure du projet
 
@@ -183,11 +224,16 @@ search-console/
 │   ├── dashboard.php          # Dashboard principal
 │   ├── layout.php             # Template de base
 │   └── sync-status.php        # Historique des syncs
+├── module.json                # Metadonnees plugin plateforme
+├── boot.php                   # Bootstrap plateforme (autoloader + env)
+├── adapter.php                # Routeur interne (pont plateforme → controllers)
 ├── .env.example               # Variables d'environnement
 ├── .gitignore
 ├── composer.json
 └── README.md
 ```
+
+---
 
 ## Notes techniques
 
