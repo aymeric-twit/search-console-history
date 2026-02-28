@@ -23,9 +23,9 @@ if (php_sapi_name() === 'cli-server') {
 
 require __DIR__ . '/../vendor/autoload.php';
 
-// Charger les variables d'environnement
+// Charger les variables d'environnement (safeLoad pour compatibilite plateforme)
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
-$dotenv->load();
+$dotenv->safeLoad();
 
 date_default_timezone_set($_ENV['APP_TIMEZONE'] ?? 'Europe/Paris');
 
