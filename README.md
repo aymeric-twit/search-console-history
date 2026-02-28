@@ -1,4 +1,4 @@
-# Google Search Console — Dashboard & Data Sync
+# Search Console
 
 > PHP application that automatically syncs Google Search Console performance data into a MySQL database and exposes an interactive analytics dashboard.
 
