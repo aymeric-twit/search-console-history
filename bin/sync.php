@@ -13,7 +13,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv = Dotenv\Dotenv::createMutable(__DIR__ . '/..');
 $dotenv->safeLoad();
 
 date_default_timezone_set($_ENV['APP_TIMEZONE'] ?? 'Europe/Paris');
