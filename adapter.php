@@ -63,12 +63,7 @@ try {
         echo '404 - Page non trouvée';
     }
 } catch (\Throwable $e) {
-    if (($_ENV['APP_ENV'] ?? 'production') === 'development') {
-        http_response_code(500);
-        echo '<h1>Erreur</h1><pre>' . htmlspecialchars($e->getMessage()) . "\n\n" . $e->getTraceAsString() . '</pre>';
-    } else {
-        http_response_code(500);
-        echo 'Erreur interne du serveur.';
-        error_log($e->getMessage() . "\n" . $e->getTraceAsString());
-    }
+    http_response_code(500);
+    echo '<h1>Erreur</h1><pre>' . htmlspecialchars($e->getMessage()) . "\n\n" . $e->getTraceAsString() . '</pre>';
+    error_log($e->getMessage() . "\n" . $e->getTraceAsString());
 }
