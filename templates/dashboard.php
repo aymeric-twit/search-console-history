@@ -5,7 +5,7 @@ ob_start();
 ?>
 
 <!-- Barre de filtres -->
-<form class="filters-bar" method="GET" action="/">
+<form class="filters-bar" method="GET" action="<?= defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '' ?>/">
     <div>
         <label for="site_id">Site</label>
         <select name="site_id" id="site_id">
@@ -143,7 +143,7 @@ window.dashboardParams = {
 };
 window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
 </script>
-<script src="/assets/js/dashboard.js"></script>
+<script src="<?= defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '' ?>/assets/js/dashboard.js"></script>
 <script>
 (function() {
     var p = window.dashboardParams;

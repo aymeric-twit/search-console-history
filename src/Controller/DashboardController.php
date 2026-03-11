@@ -21,7 +21,8 @@ class DashboardController
         // Vérifier l'authentification
         $oauth = new GoogleOAuth();
         if (!$oauth->hasToken()) {
-            header('Location: /auth');
+            $prefix = defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '';
+            header('Location: ' . $prefix . '/auth');
             exit;
         }
 

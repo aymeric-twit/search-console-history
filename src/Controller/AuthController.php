@@ -42,7 +42,8 @@ class AuthController
 
         try {
             $this->oauth->handleCallback($_GET['code']);
-            header('Location: /');
+            $prefix = defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '';
+            header('Location: ' . $prefix . '/');
             exit;
         } catch (\Throwable $e) {
             http_response_code(500);
@@ -59,7 +60,8 @@ class AuthController
             // Ignore les erreurs de révocation
         }
 
-        header('Location: /auth');
+        $prefix = defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '';
+        header('Location: ' . $prefix . '/auth');
         exit;
     }
 }

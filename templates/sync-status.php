@@ -97,6 +97,7 @@ ob_start();
     var taskList   = document.getElementById('syncTaskList');
     var pollTimer  = null;
     var currentJobId = null;
+    var baseUrl = window.MODULE_BASE_URL || '';
 
     // Lancer la sync
     form.addEventListener('submit', function(e) {
@@ -105,7 +106,7 @@ ob_start();
         btn.textContent = 'Demarrage...';
 
         var siteId = document.getElementById('sync_site_id').value;
-        var url = '/api/sync' + (siteId ? '?site_id=' + siteId : '');
+        var url = baseUrl + '/api/sync' + (siteId ? '?site_id=' + siteId : '');
 
         fetch(url, { method: 'POST' })
             .then(function(r) { return r.json(); })
@@ -146,7 +147,7 @@ ob_start();
     function poll() {
         if (!currentJobId) return;
 
-        fetch('/api/sync-progress?job_id=' + currentJobId)
+        fetch(baseUrl + '/api/sync-progress?job_id=' + currentJobId)
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 updateUI(data);
@@ -247,7 +248,7 @@ ob_start();
     }
 
     // Detection au chargement : verifier s'il y a un sync en cours
-    fetch('/api/sync-progress')
+    fetch(baseUrl + '/api/sync-progress')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.status === 'pending' || data.status === 'running') {
