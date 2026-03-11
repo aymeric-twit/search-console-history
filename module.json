@@ -1,5 +1,5 @@
 {
-    "slug": "search-console",
+    "slug": "search-console-history",
     "name": "Search Console",
     "description": "Dashboard Google Search Console avec synchronisation des données",
     "version": "1.0.0",

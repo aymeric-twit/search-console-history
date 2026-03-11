@@ -8,7 +8,7 @@ if (file_exists($vendorAutoload)) {
 
 // Set module URL prefix for internal redirects
 if (!defined('MODULE_URL_PREFIX')) {
-    define('MODULE_URL_PREFIX', '/m/search-console');
+    define('MODULE_URL_PREFIX', '/m/search-console-history');
 }
 
 date_default_timezone_set($_ENV['APP_TIMEZONE'] ?? 'Europe/Paris');

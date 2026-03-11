@@ -8,7 +8,7 @@
 // The boot.php is loaded by ModuleRenderer before this file
 // Determine the sub-path within the module
 $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
-$prefix = defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '/m/search-console';
+$prefix = defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '/m/search-console-history';
 $path = parse_url($requestUri, PHP_URL_PATH);
 
 // Strip the platform prefix to get the module-internal path
