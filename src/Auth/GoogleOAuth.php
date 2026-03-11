@@ -121,7 +121,7 @@ class GoogleOAuth
         if ($token) {
             $this->client->revokeToken($token['access_token']);
         }
-        Connection::get()->exec('DELETE FROM oauth_tokens');
+        Connection::get()->exec('DELETE FROM sc_oauth_tokens');
     }
 
     // ------------------------------------------------------------------
@@ -136,10 +136,10 @@ class GoogleOAuth
         $scope = $token['scope'] ?? '';
 
         // On ne garde qu'un seul enregistrement (single-user)
-        $db->exec('DELETE FROM oauth_tokens');
+        $db->exec('DELETE FROM sc_oauth_tokens');
 
         $stmt = $db->prepare(
-            'INSERT INTO oauth_tokens (access_token, refresh_token, token_type, expires_at, scope)
+            'INSERT INTO sc_oauth_tokens (access_token, refresh_token, token_type, expires_at, scope)
              VALUES (:access_token, :refresh_token, :token_type, :expires_at, :scope)'
         );
 
@@ -154,7 +154,7 @@ class GoogleOAuth
 
     private function loadToken(): ?array
     {
-        $stmt = Connection::get()->query('SELECT * FROM oauth_tokens ORDER BY id DESC LIMIT 1');
+        $stmt = Connection::get()->query('SELECT * FROM sc_oauth_tokens ORDER BY id DESC LIMIT 1');
         $row = $stmt->fetch();
 
         return $row ?: null;

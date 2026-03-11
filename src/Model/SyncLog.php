@@ -22,7 +22,7 @@ class SyncLog
     public function start(int $siteId, string $searchType, string $dateFrom, string $dateTo, ?int $jobId = null): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO sync_logs (job_id, site_id, search_type, date_from, date_to, status, started_at)
+            'INSERT INTO sc_sync_logs (job_id, site_id, search_type, date_from, date_to, status, started_at)
              VALUES (:job_id, :site_id, :search_type, :date_from, :date_to, "running", NOW())'
         );
 
@@ -41,7 +41,7 @@ class SyncLog
     public function setChunks(int $logId, int $total): void
     {
         $stmt = $this->db->prepare(
-            'UPDATE sync_logs SET total_chunks = :total, done_chunks = 0 WHERE id = :id'
+            'UPDATE sc_sync_logs SET total_chunks = :total, done_chunks = 0 WHERE id = :id'
         );
         $stmt->execute(['id' => $logId, 'total' => $total]);
     }
@@ -50,7 +50,7 @@ class SyncLog
     public function advanceChunk(int $logId): void
     {
         $stmt = $this->db->prepare(
-            'UPDATE sync_logs SET done_chunks = done_chunks + 1 WHERE id = :id'
+            'UPDATE sc_sync_logs SET done_chunks = done_chunks + 1 WHERE id = :id'
         );
         $stmt->execute(['id' => $logId]);
     }
@@ -60,8 +60,8 @@ class SyncLog
     {
         $stmt = $this->db->prepare(
             'SELECT sl.*, s.site_url
-             FROM sync_logs sl
-             JOIN sites s ON s.id = sl.site_id
+             FROM sc_sync_logs sl
+             JOIN sc_sitess ON s.id = sl.site_id
              WHERE sl.job_id = :job_id AND sl.status = "running"
              ORDER BY sl.id DESC LIMIT 1'
         );
@@ -76,8 +76,8 @@ class SyncLog
     {
         $stmt = $this->db->prepare(
             'SELECT sl.*, s.site_url
-             FROM sync_logs sl
-             JOIN sites s ON s.id = sl.site_id
+             FROM sc_sync_logs sl
+             JOIN sc_sitess ON s.id = sl.site_id
              WHERE sl.job_id = :job_id AND sl.status IN ("success","error","empty")
              ORDER BY sl.id ASC'
         );
@@ -96,7 +96,7 @@ class SyncLog
         int $rowsUpdated = 0,
         ?string $effectiveDateTo = null
     ): void {
-        $sql = 'UPDATE sync_logs
+        $sql = 'UPDATE sc_sync_logs
                 SET status = "success", rows_fetched = :fetched, rows_inserted = :inserted,
                     rows_new = :rows_new, rows_updated = :rows_updated,
                     duration_sec = :duration, finished_at = NOW()';
@@ -125,7 +125,7 @@ class SyncLog
     public function markEmpty(int $logId, float $duration): void
     {
         $stmt = $this->db->prepare(
-            'UPDATE sync_logs
+            'UPDATE sc_sync_logs
              SET status = "empty", rows_fetched = 0, rows_inserted = 0,
                  rows_new = 0, rows_updated = 0,
                  duration_sec = :duration, finished_at = NOW()
@@ -142,7 +142,7 @@ class SyncLog
     public function error(int $logId, string $message, float $duration): void
     {
         $stmt = $this->db->prepare(
-            'UPDATE sync_logs
+            'UPDATE sc_sync_logs
              SET status = "error", error_message = :msg, duration_sec = :duration, finished_at = NOW()
              WHERE id = :id'
         );
@@ -159,8 +159,8 @@ class SyncLog
     {
         $stmt = $this->db->prepare(
             'SELECT sl.*, s.site_url
-             FROM sync_logs sl
-             JOIN sites s ON s.id = sl.site_id
+             FROM sc_sync_logs sl
+             JOIN sc_sitess ON s.id = sl.site_id
              ORDER BY sl.id DESC
              LIMIT :lim'
         );
@@ -174,7 +174,7 @@ class SyncLog
     public function lastSuccess(int $siteId, string $searchType): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT * FROM sync_logs
+            'SELECT * FROM sc_sync_logs
              WHERE site_id = :site_id AND search_type = :st AND status = "success"
              ORDER BY date_to DESC LIMIT 1'
         );
@@ -184,11 +184,11 @@ class SyncLog
         return $row ?: null;
     }
 
-    /** Nettoie les sync_logs orphelins (running sans process actif). */
+    /** Nettoie les sc_sync_logs orphelins (running sans process actif). */
     public function cleanupOrphans(): int
     {
         $stmt = $this->db->prepare(
-            'UPDATE sync_logs
+            'UPDATE sc_sync_logs
              SET status = "error",
                  error_message = "Process interrompu (cleanup automatique)",
                  finished_at = NOW()

@@ -26,7 +26,7 @@ class PerformanceDaily
      */
     public function recalculer(int $siteId, string $dateFrom, string $dateTo): int
     {
-        $sql = "INSERT INTO performance_daily
+        $sql = "INSERT INTO sc_performance_daily
                     (site_id, data_date, device, country, search_type,
                      query_count, page_count, clicks, impressions, position_sum, row_count)
                 SELECT site_id, data_date, device, country, search_type,
@@ -36,7 +36,7 @@ class PerformanceDaily
                        SUM(impressions),
                        SUM(position),
                        COUNT(*)
-                FROM performance_data
+                FROM sc_performance_data
                 WHERE site_id = :site_id AND data_date BETWEEN :date_from AND :date_to
                 GROUP BY site_id, data_date, device, country, search_type
                 ON DUPLICATE KEY UPDATE
@@ -62,7 +62,7 @@ class PerformanceDaily
      */
     public function recalculerTout(): int
     {
-        $sql = "INSERT INTO performance_daily
+        $sql = "INSERT INTO sc_performance_daily
                     (site_id, data_date, device, country, search_type,
                      query_count, page_count, clicks, impressions, position_sum, row_count)
                 SELECT site_id, data_date, device, country, search_type,
@@ -72,7 +72,7 @@ class PerformanceDaily
                        SUM(impressions),
                        SUM(position),
                        COUNT(*)
-                FROM performance_data
+                FROM sc_performance_data
                 GROUP BY site_id, data_date, device, country, search_type
                 ON DUPLICATE KEY UPDATE
                     query_count  = VALUES(query_count),
@@ -105,7 +105,7 @@ class PerformanceDaily
                        CASE WHEN SUM(row_count) > 0
                             THEN SUM(position_sum) / SUM(row_count)
                             ELSE 0 END  AS position
-                FROM performance_daily
+                FROM sc_performance_daily
                 WHERE {$where}
                 GROUP BY data_date
                 ORDER BY data_date";
@@ -124,7 +124,7 @@ class PerformanceDaily
         $sql = "SELECT device,
                        SUM(clicks)      AS clicks,
                        SUM(impressions) AS impressions
-                FROM performance_daily
+                FROM sc_performance_daily
                 WHERE {$where} AND device != ''
                 GROUP BY device
                 ORDER BY clicks DESC";
@@ -143,7 +143,7 @@ class PerformanceDaily
         $sql = "SELECT country,
                        SUM(clicks)      AS clicks,
                        SUM(impressions) AS impressions
-                FROM performance_daily
+                FROM sc_performance_daily
                 WHERE {$where} AND country != ''
                 GROUP BY country
                 ORDER BY clicks DESC
@@ -168,7 +168,7 @@ class PerformanceDaily
                        CASE WHEN SUM(row_count) > 0
                             THEN SUM(position_sum) / SUM(row_count)
                             ELSE 0 END  AS position
-                FROM performance_daily
+                FROM sc_performance_daily
                 WHERE {$where}";
 
         $stmt = $this->db->prepare($sql);
@@ -204,7 +204,7 @@ class PerformanceDaily
     // ------------------------------------------------------------------
 
     /**
-     * Construit la clause WHERE pour la table performance_daily.
+     * Construit la clause WHERE pour la table sc_performance_daily.
      * Filtres supportés : device, country, search_type.
      * Note : les filtres query/page ne s'appliquent pas ici (agrégats).
      */

@@ -21,7 +21,7 @@ class SyncJob
     public function create(?int $siteId): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO sync_jobs (site_id, status, started_at)
+            'INSERT INTO sc_sync_jobs (site_id, status, started_at)
              VALUES (:site_id, "pending", NOW())'
         );
         $stmt->execute(['site_id' => $siteId]);
@@ -33,7 +33,7 @@ class SyncJob
     public function start(int $jobId, int $totalTasks): void
     {
         $stmt = $this->db->prepare(
-            'UPDATE sync_jobs
+            'UPDATE sc_sync_jobs
              SET status = "running", total_tasks = :total
              WHERE id = :id'
         );
@@ -44,7 +44,7 @@ class SyncJob
     public function advanceTask(int $jobId): void
     {
         $stmt = $this->db->prepare(
-            'UPDATE sync_jobs
+            'UPDATE sc_sync_jobs
              SET completed_tasks = completed_tasks + 1
              WHERE id = :id'
         );
@@ -55,7 +55,7 @@ class SyncJob
     public function success(int $jobId): void
     {
         $stmt = $this->db->prepare(
-            'UPDATE sync_jobs
+            'UPDATE sc_sync_jobs
              SET status = "success", finished_at = NOW()
              WHERE id = :id'
         );
@@ -66,7 +66,7 @@ class SyncJob
     public function error(int $jobId, string $msg): void
     {
         $stmt = $this->db->prepare(
-            'UPDATE sync_jobs
+            'UPDATE sc_sync_jobs
              SET status = "error", error_message = :msg, finished_at = NOW()
              WHERE id = :id'
         );
@@ -76,7 +76,7 @@ class SyncJob
     /** Retourne un job par son ID. */
     public function find(int $jobId): ?array
     {
-        $stmt = $this->db->prepare('SELECT * FROM sync_jobs WHERE id = :id');
+        $stmt = $this->db->prepare('SELECT * FROM sc_sync_jobs WHERE id = :id');
         $stmt->execute(['id' => $jobId]);
         $row = $stmt->fetch();
 
@@ -87,7 +87,7 @@ class SyncJob
     public function findRunning(): ?array
     {
         $stmt = $this->db->query(
-            'SELECT * FROM sync_jobs
+            'SELECT * FROM sc_sync_jobs
              WHERE status IN ("pending","running")
              ORDER BY id DESC LIMIT 1'
         );
@@ -100,7 +100,7 @@ class SyncJob
     public function setPid(int $jobId, int $pid): void
     {
         $stmt = $this->db->prepare(
-            'UPDATE sync_jobs SET pid = :pid WHERE id = :id'
+            'UPDATE sc_sync_jobs SET pid = :pid WHERE id = :id'
         );
         $stmt->execute(['id' => $jobId, 'pid' => $pid]);
     }
@@ -109,7 +109,7 @@ class SyncJob
     public function setLogFile(int $jobId, string $path): void
     {
         $stmt = $this->db->prepare(
-            'UPDATE sync_jobs SET log_file = :path WHERE id = :id'
+            'UPDATE sc_sync_jobs SET log_file = :path WHERE id = :id'
         );
         $stmt->execute(['id' => $jobId, 'path' => $path]);
     }

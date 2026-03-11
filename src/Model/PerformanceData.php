@@ -38,7 +38,7 @@ class PerformanceData
             return ['new' => 0, 'updated' => 0];
         }
 
-        $sql = 'INSERT INTO performance_data
+        $sql = 'INSERT INTO sc_performance_data
                     (site_id, data_date, page, query, country, device, search_type,
                      clicks, impressions, ctr, position)
                 VALUES
@@ -110,7 +110,7 @@ class PerformanceData
                             THEN SUM(clicks) / SUM(impressions)
                             ELSE 0 END  AS ctr,
                        AVG(position)    AS position
-                FROM performance_data
+                FROM sc_performance_data
                 WHERE {$where}
                 GROUP BY data_date
                 ORDER BY data_date";
@@ -133,7 +133,7 @@ class PerformanceData
                             THEN SUM(clicks) / SUM(impressions)
                             ELSE 0 END  AS ctr,
                        AVG(position)    AS position
-                FROM performance_data
+                FROM sc_performance_data
                 WHERE {$where} AND query != ''
                 GROUP BY query
                 ORDER BY clicks DESC
@@ -157,7 +157,7 @@ class PerformanceData
                             THEN SUM(clicks) / SUM(impressions)
                             ELSE 0 END  AS ctr,
                        AVG(position)    AS position
-                FROM performance_data
+                FROM sc_performance_data
                 WHERE {$where} AND page != ''
                 GROUP BY page
                 ORDER BY impressions DESC
@@ -177,7 +177,7 @@ class PerformanceData
         $sql = "SELECT device,
                        SUM(clicks)      AS clicks,
                        SUM(impressions) AS impressions
-                FROM performance_data
+                FROM sc_performance_data
                 WHERE {$where} AND device != ''
                 GROUP BY device
                 ORDER BY clicks DESC";
@@ -196,7 +196,7 @@ class PerformanceData
         $sql = "SELECT country,
                        SUM(clicks)      AS clicks,
                        SUM(impressions) AS impressions
-                FROM performance_data
+                FROM sc_performance_data
                 WHERE {$where} AND country != ''
                 GROUP BY country
                 ORDER BY clicks DESC
@@ -243,7 +243,7 @@ class PerformanceData
                             THEN SUM(clicks) / SUM(impressions)
                             ELSE 0 END  AS ctr,
                        AVG(position)    AS position
-                FROM performance_data
+                FROM sc_performance_data
                 WHERE {$where}";
 
         $stmt = $this->db->prepare($sql);
@@ -257,7 +257,7 @@ class PerformanceData
     {
         $stmt = $this->db->prepare(
             'SELECT MIN(data_date) AS min_date, MAX(data_date) AS max_date
-             FROM performance_data WHERE site_id = :site_id'
+             FROM sc_performance_data WHERE site_id = :site_id'
         );
         $stmt->execute(['site_id' => $siteId]);
 
@@ -279,7 +279,7 @@ class PerformanceData
                     MIN(data_date) AS min_date,
                     MAX(data_date) AS max_date,
                     COUNT(DISTINCT data_date) AS days_with_data
-             FROM performance_data
+             FROM sc_performance_data
              WHERE site_id = :site_id AND search_type = :st'
         );
         $stmt->execute(['site_id' => $siteId, 'st' => $searchType]);
@@ -289,7 +289,7 @@ class PerformanceData
         $missingDays = [];
         if ($summary['min_date'] && $summary['max_date']) {
             $stmt2 = $this->db->prepare(
-                'SELECT DISTINCT data_date FROM performance_data
+                'SELECT DISTINCT data_date FROM sc_performance_data
                  WHERE site_id = :site_id AND search_type = :st
                  ORDER BY data_date'
             );

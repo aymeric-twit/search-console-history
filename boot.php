@@ -36,3 +36,15 @@ foreach ($clesGoogle as $cle) {
         putenv("{$cle}={$val}");
     }
 }
+
+// Propager aussi les variables DB pour que le plugin utilise la même base que la plateforme
+$clesDb = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'];
+foreach ($clesDb as $cle) {
+    $val = $_ENV[$cle] ?? '';
+    if ($val !== '') {
+        putenv("{$cle}={$val}");
+    }
+}
+
+// Auto-migration : créer les tables du plugin si elles n'existent pas
+\App\Database\AutoMigrate::run();
