@@ -295,6 +295,18 @@ table.data-table td.num { text-align: right; font-variant-numeric: tabular-nums;
     border: 1px solid #fecaca;
 }
 
+.gsc-alert-warning {
+    background: var(--brand-gold-light);
+    color: #92690d;
+    border: 1px solid #fbbf24;
+    border-radius: 6px;
+    padding: .5rem .75rem;
+    font-size: .85rem;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
 .btn {
     display: inline-block;
     padding: .6rem 1.5rem;

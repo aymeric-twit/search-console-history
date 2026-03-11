@@ -1,11 +1,63 @@
 <?php
-$pageTitle   = 'Dashboard — Search Console';
+$pageTitle   = 'Search Console History';
 $currentPage = 'dashboard';
+$prefix = defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '';
+$authenticated = $this->authenticated ?? false;
 ob_start();
 ?>
 
+<!-- ── Section connexion GSC ── -->
+<div class="chart-container" style="margin-bottom:1.5rem">
+    <h3>Google Search Console</h3>
+    <div style="padding:0 .25rem">
+        <div style="display:flex; align-items:center; gap:.75rem; flex-wrap:wrap">
+            <?php if ($authenticated): ?>
+                <span class="gsc-status-badge gsc-status-connecte">
+                    <i>&#9679;</i> Connecté
+                </span>
+                <a href="<?= $prefix ?>/auth/logout" class="btn btn-outline" style="padding:.3rem .8rem; font-size:.85rem">
+                    <i class="bi bi-box-arrow-left"></i> Déconnecter
+                </a>
+            <?php elseif (!empty($oauthConfigure)): ?>
+                <span class="gsc-status-badge gsc-status-deconnecte">
+                    <i>&#9679;</i> Non connecté
+                </span>
+                <a href="<?= htmlspecialchars($authUrl) ?>" class="btn" style="padding:.3rem .8rem; font-size:.85rem">
+                    <i class="bi bi-google"></i> Connecter Google Search Console
+                </a>
+            <?php else: ?>
+                <span class="gsc-status-badge gsc-status-deconnecte">
+                    <i>&#9679;</i> Non connecté
+                </span>
+                <div class="gsc-alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    La connexion Google Search Console n'est pas configurée. Contactez l'administrateur.
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <?php if ($authenticated && !empty($sites)): ?>
+        <p style="margin-top:.75rem; font-size:.85rem; color:var(--text-secondary)">
+            <?= count($sites) ?> propriété(s) GSC synchronisée(s).
+            Scope : <code style="background:var(--brand-teal-light);color:var(--brand-dark);padding:.1em .3em;border-radius:3px;font-size:.8em">webmasters.readonly</code> (lecture seule).
+        </p>
+        <?php elseif ($authenticated && empty($sites)): ?>
+        <p style="margin-top:.75rem; font-size:.85rem; color:var(--text-secondary)">
+            Aucun site importé. <a href="<?= $prefix ?>/sync-status">Lancez une synchronisation</a> pour importer vos propriétés.
+        </p>
+        <?php elseif (!$authenticated): ?>
+        <p style="margin-top:.75rem; font-size:.85rem; color:var(--text-secondary)">
+            Connectez-vous pour synchroniser et visualiser vos données Search Console
+            (clics, impressions, positions, requêtes).
+        </p>
+        <?php endif; ?>
+    </div>
+</div>
+
+<?php if ($authenticated && !empty($sites)): ?>
+
 <!-- Barre de filtres -->
-<form class="filters-bar" method="GET" action="<?= defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '' ?>/">
+<form class="filters-bar" method="GET" action="<?= $prefix ?>/">
     <div>
         <label for="site_id">Site</label>
         <select name="site_id" id="site_id">
@@ -38,7 +90,7 @@ ob_start();
         <input type="text" name="country" id="country" placeholder="ex: FRA" value="<?= htmlspecialchars($filters['country'] ?? '') ?>" style="width:80px">
     </div>
     <div>
-        <label for="filter_query">Requete</label>
+        <label for="filter_query">Requête</label>
         <input type="text" name="filter_query" id="filter_query" placeholder="Filtrer..." value="<?= htmlspecialchars($filters['query'] ?? '') ?>">
     </div>
     <div>
@@ -81,7 +133,7 @@ ob_start();
 <!-- Graphiques appareils + pays -->
 <div class="grid-2">
     <div class="chart-container">
-        <h3>Repartition par appareil</h3>
+        <h3>Répartition par appareil</h3>
         <canvas id="deviceChart" height="200"></canvas>
     </div>
     <div class="chart-container">
@@ -90,14 +142,14 @@ ob_start();
     </div>
 </div>
 
-<!-- Tableaux Top Requetes + Top Pages -->
+<!-- Tableaux Top Requêtes + Top Pages -->
 <div class="grid-2">
     <div class="data-table-wrap">
-        <h3>Top requetes</h3>
+        <h3>Top requêtes</h3>
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Requete</th>
+                    <th>Requête</th>
                     <th>Clicks</th>
                     <th>Impressions</th>
                     <th>CTR</th>
@@ -129,7 +181,7 @@ ob_start();
     </div>
 </div>
 
-<!-- Parametres pour le JS -->
+<!-- Paramètres pour le JS -->
 <script>
 window.dashboardParams = {
     siteId: <?= (int)$siteId ?>,
@@ -143,7 +195,7 @@ window.dashboardParams = {
 };
 window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
 </script>
-<script src="<?= defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '' ?>/assets/js/dashboard.js"></script>
+<script src="<?= $prefix ?>/assets/js/dashboard.js"></script>
 <script>
 (function() {
     var p = window.dashboardParams;
@@ -263,6 +315,8 @@ window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
     }
 })();
 </script>
+
+<?php endif; // fin $authenticated && !empty($sites) ?>
 
 <?php
 $content = ob_get_clean();

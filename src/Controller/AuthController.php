@@ -61,7 +61,7 @@ class AuthController
         }
 
         $prefix = defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '';
-        header('Location: ' . $prefix . '/auth');
+        header('Location: ' . $prefix . '/');
         exit;
     }
 }

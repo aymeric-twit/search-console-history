@@ -1,6 +1,7 @@
 <?php
 $pageTitle   = 'Synchronisations — Search Console';
 $currentPage = 'sync';
+$authenticated = true; // sync-status n'est accessible que si connecté
 ob_start();
 ?>
 
