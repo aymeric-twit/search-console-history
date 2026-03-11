@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Auth\GoogleOAuth;
 use App\Model\PerformanceData;
+use App\Model\PerformanceDaily;
 use App\Model\Site;
 use App\Model\SyncJob;
 use App\Model\SyncLog;
@@ -22,6 +23,7 @@ class SyncController
 {
     private SearchConsoleAPI $api;
     private PerformanceData $perfModel;
+    private PerformanceDaily $dailyModel;
     private Site $siteModel;
     private SyncLog $syncLog;
     private SyncJob $syncJob;
@@ -34,11 +36,12 @@ class SyncController
     public function __construct()
     {
         $auth = new GoogleOAuth();
-        $this->api       = new SearchConsoleAPI($auth);
-        $this->perfModel = new PerformanceData();
-        $this->siteModel = new Site();
-        $this->syncLog   = new SyncLog();
-        $this->syncJob   = new SyncJob();
+        $this->api        = new SearchConsoleAPI($auth);
+        $this->perfModel  = new PerformanceData();
+        $this->dailyModel = new PerformanceDaily();
+        $this->siteModel  = new Site();
+        $this->syncLog    = new SyncLog();
+        $this->syncJob    = new SyncJob();
 
         $this->daysBack    = (int) ($_ENV['SYNC_DAYS_BACK']    ?? 480);
         $this->dataState   = $_ENV['SYNC_DATA_STATE']          ?? 'all';
@@ -244,6 +247,10 @@ class SyncController
                 $logId, $totalFetched, $totalInserted, $duration,
                 $totalNew, $totalUpdated, $effectiveDateTo
             );
+
+            // Recalculer les agrégats quotidiens pour la plage synchronisée
+            $this->dailyModel->recalculer($siteId, $startDate, $endDate);
+            $this->log("[{$siteUrl}][{$searchType}] Agrégats quotidiens recalculés.");
 
             $this->log("[{$siteUrl}][{$searchType}] Terminé : {$totalFetched} récupérées ({$totalNew} new, {$totalUpdated} updated) en {$duration}s.");
 

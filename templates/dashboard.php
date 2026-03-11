@@ -149,6 +149,7 @@ window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
     var p = window.dashboardParams;
     if (!p.siteId) return;
 
+    var baseUrl = window.MODULE_BASE_URL || '';
     var qs = 'site_id=' + p.siteId + '&from=' + p.from + '&to=' + p.to
         + '&search_type=' + encodeURIComponent(p.searchType)
         + (p.device ? '&device=' + encodeURIComponent(p.device) : '')
@@ -156,61 +157,57 @@ window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
         + (p.filterQuery ? '&filter_query=' + encodeURIComponent(p.filterQuery) : '')
         + (p.filterPage ? '&filter_page=' + encodeURIComponent(p.filterPage) : '');
 
+    var qsCompare = qs.replace('from=', 'from1=').replace('to=', 'to1=')
+        + '&from2=' + encodeURIComponent(prevFrom(p.from, p.to))
+        + '&to2=' + encodeURIComponent(prevTo(p.from));
+
     function fmt(n) { return Number(n || 0).toLocaleString('fr-FR'); }
     function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-    // Charger KPIs + comparaison
-    fetch('/api/compare?' + qs.replace('from=', 'from1=').replace('to=', 'to1=')
-        + '&from2=' + encodeURIComponent(prevFrom(p.from, p.to))
-        + '&to2=' + encodeURIComponent(prevTo(p.from)))
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            var c = data.current || {};
-            var d = data.diff || {};
-            document.getElementById('kpi-clicks').textContent = fmt(c.clicks);
-            document.getElementById('kpi-impressions').textContent = fmt(c.impressions);
-            document.getElementById('kpi-ctr').textContent = ((c.ctr || 0) * 100).toFixed(2).replace('.', ',') + '%';
-            document.getElementById('kpi-position').textContent = (c.position || 0).toFixed(1).replace('.', ',');
-            setDiff('kpi-clicks-diff', d.clicks, false);
-            setDiff('kpi-impressions-diff', d.impressions, false);
-            setDiff('kpi-ctr-diff', d.ctr * 100, false, ' pts', 2);
-            setDiff('kpi-position-diff', d.position, true, '', 1);
-        });
+    // Charger toutes les données en parallèle
+    Promise.all([
+        fetch(baseUrl + '/api/compare?' + qsCompare).then(function(r) { return r.json(); }),
+        fetch(baseUrl + '/api/daily-trend?' + qs).then(function(r) { return r.json(); }),
+        fetch(baseUrl + '/api/devices?' + qs).then(function(r) { return r.json(); }),
+        fetch(baseUrl + '/api/countries?' + qs).then(function(r) { return r.json(); }),
+        fetch(baseUrl + '/api/top-queries?' + qs + '&limit=20').then(function(r) { return r.json(); }),
+        fetch(baseUrl + '/api/top-pages?' + qs + '&limit=20').then(function(r) { return r.json(); })
+    ]).then(function(results) {
+        var compare   = results[0];
+        var trend     = results[1];
+        var devices   = results[2];
+        var countries = results[3];
+        var queries   = results[4];
+        var pages     = results[5];
 
-    // Charger tendance quotidienne
-    fetch('/api/daily-trend?' + qs)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            window.dashboardData.dailyTrend = data;
-            if (typeof window.renderTrendChart === 'function') window.renderTrendChart(data);
-        });
+        // KPIs
+        var c = compare.current || {};
+        var d = compare.diff || {};
+        document.getElementById('kpi-clicks').textContent = fmt(c.clicks);
+        document.getElementById('kpi-impressions').textContent = fmt(c.impressions);
+        document.getElementById('kpi-ctr').textContent = ((c.ctr || 0) * 100).toFixed(2).replace('.', ',') + '%';
+        document.getElementById('kpi-position').textContent = (c.position || 0).toFixed(1).replace('.', ',');
+        setDiff('kpi-clicks-diff', d.clicks, false);
+        setDiff('kpi-impressions-diff', d.impressions, false);
+        setDiff('kpi-ctr-diff', d.ctr * 100, false, ' pts', 2);
+        setDiff('kpi-position-diff', d.position, true, '', 1);
 
-    // Charger appareils
-    fetch('/api/devices?' + qs)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            window.dashboardData.devices = data;
-            if (typeof window.renderDeviceChart === 'function') window.renderDeviceChart(data);
-        });
+        // Graphiques
+        window.dashboardData.dailyTrend = trend;
+        if (typeof window.renderTrendChart === 'function') window.renderTrendChart(trend);
 
-    // Charger pays
-    fetch('/api/countries?' + qs)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            window.dashboardData.countries = data;
-            if (typeof window.renderCountryChart === 'function') window.renderCountryChart(data);
-        });
+        window.dashboardData.devices = devices;
+        if (typeof window.renderDeviceChart === 'function') window.renderDeviceChart(devices);
 
-    // Charger top requetes
-    fetch('/api/top-queries?' + qs + '&limit=20')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            var tbody = document.getElementById('queries-body');
-            if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999">Aucune donnee</td></tr>';
-                return;
-            }
-            tbody.innerHTML = data.map(function(q) {
+        window.dashboardData.countries = countries;
+        if (typeof window.renderCountryChart === 'function') window.renderCountryChart(countries);
+
+        // Top requêtes
+        var tbodyQ = document.getElementById('queries-body');
+        if (!queries.length) {
+            tbodyQ.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Aucune donnée</td></tr>';
+        } else {
+            tbodyQ.innerHTML = queries.map(function(q) {
                 return '<tr>'
                     + '<td class="truncate">' + escapeHtml(q.query) + '</td>'
                     + '<td class="num">' + fmt(q.clicks) + '</td>'
@@ -219,18 +216,14 @@ window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
                     + '<td class="num">' + Number(q.position).toFixed(1) + '</td>'
                     + '</tr>';
             }).join('');
-        });
+        }
 
-    // Charger top pages
-    fetch('/api/top-pages?' + qs + '&limit=20')
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            var tbody = document.getElementById('pages-body');
-            if (!data.length) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999">Aucune donnee</td></tr>';
-                return;
-            }
-            tbody.innerHTML = data.map(function(pg) {
+        // Top pages
+        var tbodyP = document.getElementById('pages-body');
+        if (!pages.length) {
+            tbodyP.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Aucune donnée</td></tr>';
+        } else {
+            tbodyP.innerHTML = pages.map(function(pg) {
                 return '<tr>'
                     + '<td class="truncate">' + escapeHtml(pg.page) + '</td>'
                     + '<td class="num">' + fmt(pg.clicks) + '</td>'
@@ -239,7 +232,10 @@ window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
                     + '<td class="num">' + Number(pg.position).toFixed(1) + '</td>'
                     + '</tr>';
             }).join('');
-        });
+        }
+    }).catch(function(err) {
+        console.error('Erreur chargement dashboard:', err);
+    });
 
     function setDiff(id, val, invertColor, suffix, decimals) {
         var el = document.getElementById(id);
@@ -248,7 +244,7 @@ window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
         suffix = suffix || '';
         var n = Number(val);
         var sign = n >= 0 ? '+' : '';
-        el.textContent = sign + n.toFixed(decimals).replace('.', ',') + suffix + ' vs periode prec.';
+        el.textContent = sign + n.toFixed(decimals).replace('.', ',') + suffix + ' vs période préc.';
         var positive = invertColor ? n <= 0 : n >= 0;
         el.className = 'diff ' + (positive ? 'positive' : 'negative');
     }

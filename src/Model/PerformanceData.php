@@ -96,30 +96,8 @@ class PerformanceData
 
     /**
      * Tendance quotidienne : clicks, impressions, CTR, position.
-     */
-    public function dailyTrend(int $siteId, string $from, string $to, array $filters = []): array
-    {
-        [$where, $params] = $this->buildFilters($siteId, $from, $to, $filters);
-
-        $sql = "SELECT data_date,
-                       SUM(clicks)      AS clicks,
-                       SUM(impressions) AS impressions,
-                       CASE WHEN SUM(impressions) > 0
-                            THEN SUM(clicks) / SUM(impressions)
-                            ELSE 0 END  AS ctr,
-                       AVG(position)    AS position
-                FROM performance_data
-                WHERE {$where}
-                GROUP BY data_date
-                ORDER BY data_date";
-
-        return $this->db->prepare($sql)->execute($params)
-            ? $this->db->prepare($sql)->fetchAll()
-            : [];
-    }
-
-    /**
-     * Tendance quotidienne optimisée (exécute et retourne).
+     * Utilisé uniquement quand des filtres texte (query/page) sont actifs,
+     * sinon le dashboard utilise PerformanceDaily.
      */
     public function getDailyTrend(int $siteId, string $from, string $to, array $filters = []): array
     {

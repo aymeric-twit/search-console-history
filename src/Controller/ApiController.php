@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Auth\GoogleOAuth;
 use App\Model\PerformanceData;
+use App\Model\PerformanceDaily;
 use App\Model\Site;
 use App\Model\SyncJob;
 use App\Model\SyncLog;
@@ -12,10 +13,14 @@ use App\Model\SyncLog;
  * Endpoints API JSON pour exposer les données à un front JS ou outil externe.
  *
  * Toutes les réponses sont en JSON.
+ * Les endpoints trend/devices/countries/totals/compare utilisent la table pré-agrégée
+ * (PerformanceDaily) pour des réponses instantanées.
+ * Les endpoints topQueries/topPages restent sur la table brute (PerformanceData).
  */
 class ApiController
 {
     private PerformanceData $perfModel;
+    private PerformanceDaily $dailyModel;
     private Site $siteModel;
     private SyncLog $syncLog;
     private SyncJob $syncJob;
@@ -28,10 +33,11 @@ class ApiController
             exit;
         }
 
-        $this->perfModel = new PerformanceData();
-        $this->siteModel = new Site();
-        $this->syncLog   = new SyncLog();
-        $this->syncJob   = new SyncJob();
+        $this->perfModel  = new PerformanceData();
+        $this->dailyModel = new PerformanceDaily();
+        $this->siteModel  = new Site();
+        $this->syncLog    = new SyncLog();
+        $this->syncJob    = new SyncJob();
     }
 
     /** GET /api/sites — Liste des sites. */
@@ -40,11 +46,13 @@ class ApiController
         $this->json($this->siteModel->allActive());
     }
 
-    /** GET /api/daily-trend?site_id=X&from=Y&to=Z */
+    /** GET /api/daily-trend?site_id=X&from=Y&to=Z — table pré-agrégée */
     public function dailyTrend(): void
     {
         [$siteId, $from, $to, $filters] = $this->parseParams();
-        $data = $this->perfModel->getDailyTrend($siteId, $from, $to, $filters);
+        $data = $this->hasTextFilters($filters)
+            ? $this->perfModel->getDailyTrend($siteId, $from, $to, $filters)
+            : $this->dailyModel->getDailyTrend($siteId, $from, $to, $filters);
         $this->json($data);
     }
 
@@ -66,32 +74,38 @@ class ApiController
         $this->json($data);
     }
 
-    /** GET /api/devices?site_id=X&from=Y&to=Z */
+    /** GET /api/devices?site_id=X&from=Y&to=Z — table pré-agrégée */
     public function devices(): void
     {
         [$siteId, $from, $to, $filters] = $this->parseParams();
-        $data = $this->perfModel->byDevice($siteId, $from, $to, $filters);
+        $data = $this->hasTextFilters($filters)
+            ? $this->perfModel->byDevice($siteId, $from, $to, $filters)
+            : $this->dailyModel->byDevice($siteId, $from, $to, $filters);
         $this->json($data);
     }
 
-    /** GET /api/countries?site_id=X&from=Y&to=Z */
+    /** GET /api/countries?site_id=X&from=Y&to=Z — table pré-agrégée */
     public function countries(): void
     {
         [$siteId, $from, $to, $filters] = $this->parseParams();
         $limit = (int) ($_GET['limit'] ?? 20);
-        $data = $this->perfModel->byCountry($siteId, $from, $to, $limit, $filters);
+        $data = $this->hasTextFilters($filters)
+            ? $this->perfModel->byCountry($siteId, $from, $to, $limit, $filters)
+            : $this->dailyModel->byCountry($siteId, $from, $to, $limit, $filters);
         $this->json($data);
     }
 
-    /** GET /api/totals?site_id=X&from=Y&to=Z */
+    /** GET /api/totals?site_id=X&from=Y&to=Z — table pré-agrégée */
     public function totals(): void
     {
         [$siteId, $from, $to, $filters] = $this->parseParams();
-        $data = $this->perfModel->periodTotals($siteId, $from, $to, $filters);
+        $data = $this->hasTextFilters($filters)
+            ? $this->perfModel->periodTotals($siteId, $from, $to, $filters)
+            : $this->dailyModel->periodTotals($siteId, $from, $to, $filters);
         $this->json($data);
     }
 
-    /** GET /api/compare?site_id=X&from1=Y&to1=Z&from2=A&to2=B */
+    /** GET /api/compare?site_id=X&from1=Y&to1=Z&from2=A&to2=B — table pré-agrégée */
     public function compare(): void
     {
         $siteId = (int) ($_GET['site_id'] ?? 0);
@@ -101,7 +115,9 @@ class ApiController
         $to2   = $_GET['to2']   ?? date('Y-m-d', strtotime('-34 days'));
 
         $filters = $this->parseFilters();
-        $data = $this->perfModel->comparePeriods($siteId, $from1, $to1, $from2, $to2, $filters);
+        $data = $this->hasTextFilters($filters)
+            ? $this->perfModel->comparePeriods($siteId, $from1, $to1, $from2, $to2, $filters)
+            : $this->dailyModel->comparePeriods($siteId, $from1, $to1, $from2, $to2, $filters);
         $this->json($data);
     }
 
@@ -310,6 +326,15 @@ class ApiController
     // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
+
+    /**
+     * Vérifie si les filtres contiennent des filtres texte (query/page)
+     * qui nécessitent la table brute performance_data.
+     */
+    private function hasTextFilters(array $filters): bool
+    {
+        return !empty($filters['query']) || !empty($filters['page']);
+    }
 
     private function parseParams(): array
     {
