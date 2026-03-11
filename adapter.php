@@ -22,7 +22,8 @@ $method = $_SERVER['REQUEST_METHOD'];
 try {
     // --- Routes Auth ---
     if ($internalPath === '/auth') {
-        (new \App\Controller\AuthController())->index();
+        // Redirige vers la page principale qui gère l'état de connexion
+        (new \App\Controller\DashboardController())->index();
     } elseif ($internalPath === '/auth/login') {
         (new \App\Controller\AuthController())->login();
     } elseif ($internalPath === '/auth/callback') {
@@ -51,6 +52,10 @@ try {
         (new \App\Controller\ApiController())->syncLogs();
     } elseif ($internalPath === '/api/sync' && $method === 'POST') {
         (new \App\Controller\ApiController())->triggerSync();
+    } elseif ($internalPath === '/api/sync-progress') {
+        (new \App\Controller\ApiController())->syncProgress();
+    } elseif ($internalPath === '/api/sync-diagnostic') {
+        (new \App\Controller\ApiController())->syncDiagnostic();
 
     // --- Routes Dashboard ---
     } elseif ($internalPath === '/sync-status') {

@@ -12,28 +12,33 @@ use App\Model\SyncLog;
  */
 class DashboardController
 {
-    private PerformanceData $perfModel;
-    private Site $siteModel;
-    private SyncLog $syncLog;
+    private GoogleOAuth $oauth;
+    private ?PerformanceData $perfModel = null;
+    private ?Site $siteModel = null;
+    private ?SyncLog $syncLog = null;
+    private bool $authenticated = false;
 
     public function __construct()
     {
-        // Vérifier l'authentification
-        $oauth = new GoogleOAuth();
-        if (!$oauth->hasToken()) {
-            $prefix = defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '';
-            header('Location: ' . $prefix . '/auth');
-            exit;
-        }
+        $this->oauth = new GoogleOAuth();
+        $this->authenticated = $this->oauth->hasToken();
 
-        $this->perfModel = new PerformanceData();
-        $this->siteModel = new Site();
-        $this->syncLog   = new SyncLog();
+        if ($this->authenticated) {
+            $this->perfModel = new PerformanceData();
+            $this->siteModel = new Site();
+            $this->syncLog   = new SyncLog();
+        }
     }
 
-    /** Page principale du dashboard. */
+    /** Page principale : connexion ou dashboard selon l'état d'auth. */
     public function index(): void
     {
+        if (!$this->authenticated) {
+            $authUrl = $this->oauth->getAuthUrl();
+            require __DIR__ . '/../../templates/auth.php';
+            return;
+        }
+
         $sites = $this->siteModel->allActive();
 
         // Site sélectionné (par défaut le premier)
@@ -75,6 +80,12 @@ class DashboardController
     /** Page de statut des synchronisations. */
     public function syncStatus(): void
     {
+        if (!$this->authenticated) {
+            $prefix = defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '';
+            header('Location: ' . $prefix . '/');
+            exit;
+        }
+
         $sites = $this->siteModel->allActive();
         $logs = $this->syncLog->recent(100);
         require __DIR__ . '/../../templates/sync-status.php';
