@@ -8,23 +8,27 @@ use Google\Client as GoogleClient;
 /**
  * Gestion de l'authentification OAuth2 Google.
  *
- * - Génère l'URL d'autorisation
- * - Échange le code contre un token
- * - Stocke / rafraîchit les tokens en base
+ * Supporte le multi-utilisateur : chaque user a son propre token.
  */
 class GoogleOAuth
 {
     private GoogleClient $client;
+    private int $userId;
 
-    public function __construct()
+    /**
+     * @param int|null $userId ID utilisateur (null = UserContext::id())
+     */
+    public function __construct(?int $userId = null)
     {
+        $this->userId = $userId ?? UserContext::id();
+
         $this->client = new GoogleClient();
         $this->client->setClientId($_ENV['GOOGLE_CLIENT_ID']);
         $this->client->setClientSecret($_ENV['GOOGLE_CLIENT_SECRET']);
         $this->client->setRedirectUri($_ENV['GOOGLE_REDIRECT_URI']);
         $this->client->addScope('https://www.googleapis.com/auth/webmasters.readonly');
-        $this->client->setAccessType('offline');    // pour obtenir un refresh_token
-        $this->client->setPrompt('consent');        // force le consent pour garantir le refresh_token
+        $this->client->setAccessType('offline');
+        $this->client->setPrompt('consent');
         $this->client->setIncludeGrantedScopes(true);
     }
 
@@ -36,7 +40,7 @@ class GoogleOAuth
 
     /**
      * Échange le code d'autorisation contre un access + refresh token
-     * et les stocke en base de données.
+     * et les stocke en base de données pour l'utilisateur courant.
      */
     public function handleCallback(string $code): array
     {
@@ -60,7 +64,7 @@ class GoogleOAuth
         $token = $this->loadToken();
 
         if (!$token) {
-            throw new \RuntimeException('Aucun token OAuth enregistré. Veuillez vous authentifier via /auth.');
+            throw new \RuntimeException('Aucun token OAuth enregistré. Veuillez vous authentifier.');
         }
 
         $this->client->setAccessToken([
@@ -71,7 +75,6 @@ class GoogleOAuth
             'created'       => strtotime($token['created_at']),
         ]);
 
-        // Rafraîchissement automatique si le token est expiré
         if ($this->client->isAccessTokenExpired()) {
             if (empty($token['refresh_token'])) {
                 throw new \RuntimeException('Token expiré et pas de refresh_token disponible.');
@@ -83,7 +86,6 @@ class GoogleOAuth
                 throw new \RuntimeException('Refresh token error: ' . ($newToken['error_description'] ?? $newToken['error']));
             }
 
-            // Conserver le refresh_token s'il n'est pas renvoyé
             if (empty($newToken['refresh_token'])) {
                 $newToken['refresh_token'] = $token['refresh_token'];
             }
@@ -94,7 +96,7 @@ class GoogleOAuth
         return $this->client;
     }
 
-    /** Vérifie si un token valide est disponible (refresh si expire). */
+    /** Vérifie si un token valide est disponible pour l'utilisateur courant. */
     public function hasToken(): bool
     {
         $token = $this->loadToken();
@@ -102,7 +104,6 @@ class GoogleOAuth
             return false;
         }
 
-        // Si le token est expire, tenter un refresh silencieux
         if (strtotime($token['expires_at']) <= time() && !empty($token['refresh_token'])) {
             try {
                 $this->getAuthenticatedClient();
@@ -114,18 +115,24 @@ class GoogleOAuth
         return true;
     }
 
-    /** Supprime tous les tokens (déconnexion). */
+    /** Supprime les tokens de l'utilisateur courant (déconnexion). */
     public function revokeToken(): void
     {
         $token = $this->loadToken();
         if ($token) {
-            $this->client->revokeToken($token['access_token']);
+            try {
+                $this->client->revokeToken($token['access_token']);
+            } catch (\Throwable $e) {
+                // Ignorer les erreurs de révocation Google
+            }
         }
-        Connection::get()->exec('DELETE FROM sc_oauth_tokens');
+
+        $stmt = Connection::get()->prepare('DELETE FROM sc_oauth_tokens WHERE user_id = :uid');
+        $stmt->execute(['uid' => $this->userId]);
     }
 
     // ------------------------------------------------------------------
-    // Persistence
+    // Persistence — filtrée par user_id
     // ------------------------------------------------------------------
 
     private function saveToken(array $token): void
@@ -135,15 +142,17 @@ class GoogleOAuth
         $expiresAt = date('Y-m-d H:i:s', time() + ($token['expires_in'] ?? 3600));
         $scope = $token['scope'] ?? '';
 
-        // On ne garde qu'un seul enregistrement (single-user)
-        $db->exec('DELETE FROM sc_oauth_tokens');
+        // Supprimer le token existant de cet utilisateur
+        $stmt = $db->prepare('DELETE FROM sc_oauth_tokens WHERE user_id = :uid');
+        $stmt->execute(['uid' => $this->userId]);
 
         $stmt = $db->prepare(
-            'INSERT INTO sc_oauth_tokens (access_token, refresh_token, token_type, expires_at, scope)
-             VALUES (:access_token, :refresh_token, :token_type, :expires_at, :scope)'
+            'INSERT INTO sc_oauth_tokens (user_id, access_token, refresh_token, token_type, expires_at, scope)
+             VALUES (:user_id, :access_token, :refresh_token, :token_type, :expires_at, :scope)'
         );
 
         $stmt->execute([
+            'user_id'       => $this->userId,
             'access_token'  => $token['access_token'],
             'refresh_token' => $token['refresh_token'] ?? null,
             'token_type'    => $token['token_type'] ?? 'Bearer',
@@ -154,7 +163,10 @@ class GoogleOAuth
 
     private function loadToken(): ?array
     {
-        $stmt = Connection::get()->query('SELECT * FROM sc_oauth_tokens ORDER BY id DESC LIMIT 1');
+        $stmt = Connection::get()->prepare(
+            'SELECT * FROM sc_oauth_tokens WHERE user_id = :uid ORDER BY id DESC LIMIT 1'
+        );
+        $stmt->execute(['uid' => $this->userId]);
         $row = $stmt->fetch();
 
         return $row ?: null;

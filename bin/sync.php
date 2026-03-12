@@ -30,13 +30,23 @@ echo " " . date('Y-m-d H:i:s') . "\n";
 echo "========================================\n\n";
 
 try {
-    $controller = new \App\Controller\SyncController();
+    // Déterminer le user_id depuis le job (pour charger le bon token OAuth)
+    $userId = null;
+    if ($jobId) {
+        $syncJob = new \App\Model\SyncJob();
+        $job = $syncJob->find($jobId);
+        if ($job) {
+            $userId = (int) $job['user_id'];
+        }
+    }
 
-    // Rattacher a un job existant si --job-id fourni
+    $controller = new \App\Controller\SyncController($userId);
+
+    // Rattacher à un job existant si --job-id fourni
     if ($jobId) {
         $controller->setJobId($jobId);
-        // Enregistrer le PID pour la detection de crash
-        $syncJob = new \App\Model\SyncJob();
+        // Enregistrer le PID pour la détection de crash
+        $syncJob = $syncJob ?? new \App\Model\SyncJob($userId);
         $syncJob->setPid($jobId, getmypid());
     }
 
@@ -72,7 +82,7 @@ try {
     // Marquer le job en erreur si applicable
     if ($jobId) {
         try {
-            $syncJob = $syncJob ?? new \App\Model\SyncJob();
+            $syncJob = $syncJob ?? new \App\Model\SyncJob($userId);
             $syncJob->error($jobId, $e->getMessage());
         } catch (\Throwable $ignored) {
         }

@@ -2,34 +2,42 @@
 
 namespace App\Model;
 
+use App\Auth\UserContext;
 use App\Database\Connection;
 use PDO;
 
 /**
  * Suivi global d'un job de synchronisation.
+ * Filtré par user_id pour l'isolation multi-utilisateur.
+ *
+ * Les méthodes de mutation (start, advanceTask, success, error, setPid, setLogFile)
+ * ne filtrent PAS par user_id car elles sont appelées depuis bin/sync.php
+ * (CLI, sans contexte utilisateur). Le job est déjà lié à un user_id à la création.
  */
 class SyncJob
 {
     private PDO $db;
+    private int $userId;
 
-    public function __construct()
+    public function __construct(?int $userId = null)
     {
         $this->db = Connection::get();
+        $this->userId = $userId ?? UserContext::id();
     }
 
-    /** Cree un job pending. Retourne l'ID du job. */
+    /** Crée un job pending pour l'utilisateur courant. Retourne l'ID du job. */
     public function create(?int $siteId): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO sc_sync_jobs (site_id, status, started_at)
-             VALUES (:site_id, "pending", NOW())'
+            'INSERT INTO sc_sync_jobs (user_id, site_id, status, started_at)
+             VALUES (:uid, :site_id, "pending", NOW())'
         );
-        $stmt->execute(['site_id' => $siteId]);
+        $stmt->execute(['uid' => $this->userId, 'site_id' => $siteId]);
 
         return (int) $this->db->lastInsertId();
     }
 
-    /** Passe le job en running et enregistre le nombre total de taches. */
+    /** Passe le job en running et enregistre le nombre total de tâches. */
     public function start(int $jobId, int $totalTasks): void
     {
         $stmt = $this->db->prepare(
@@ -40,7 +48,7 @@ class SyncJob
         $stmt->execute(['id' => $jobId, 'total' => $totalTasks]);
     }
 
-    /** Incremente completed_tasks de 1. */
+    /** Incrémente completed_tasks de 1. */
     public function advanceTask(int $jobId): void
     {
         $stmt = $this->db->prepare(
@@ -51,7 +59,7 @@ class SyncJob
         $stmt->execute(['id' => $jobId]);
     }
 
-    /** Marque le job comme reussi. */
+    /** Marque le job comme réussi. */
     public function success(int $jobId): void
     {
         $stmt = $this->db->prepare(
@@ -62,7 +70,7 @@ class SyncJob
         $stmt->execute(['id' => $jobId]);
     }
 
-    /** Marque le job comme echoue. */
+    /** Marque le job comme échoué. */
     public function error(int $jobId, string $msg): void
     {
         $stmt = $this->db->prepare(
@@ -73,7 +81,7 @@ class SyncJob
         $stmt->execute(['id' => $jobId, 'msg' => mb_substr($msg, 0, 5000)]);
     }
 
-    /** Retourne un job par son ID. */
+    /** Retourne un job par son ID (vérifie l'ownership en contexte web). */
     public function find(int $jobId): ?array
     {
         $stmt = $this->db->prepare('SELECT * FROM sc_sync_jobs WHERE id = :id');
@@ -83,14 +91,15 @@ class SyncJob
         return $row ?: null;
     }
 
-    /** Retourne le job en cours (running ou pending), s'il existe. */
+    /** Retourne le job en cours de l'utilisateur courant. */
     public function findRunning(): ?array
     {
-        $stmt = $this->db->query(
+        $stmt = $this->db->prepare(
             'SELECT * FROM sc_sync_jobs
-             WHERE status IN ("pending","running")
+             WHERE status IN ("pending","running") AND user_id = :uid
              ORDER BY id DESC LIMIT 1'
         );
+        $stmt->execute(['uid' => $this->userId]);
         $row = $stmt->fetch();
 
         return $row ?: null;

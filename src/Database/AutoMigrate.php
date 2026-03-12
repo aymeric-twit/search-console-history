@@ -6,23 +6,58 @@ use PDO;
 
 /**
  * Auto-migration : crée les tables du plugin si elles n'existent pas.
- * Appelé une seule fois au premier chargement via boot.php.
+ * Gère aussi les migrations incrémentales (ajout de colonnes).
+ * Appelé à chaque chargement via boot.php.
  */
 class AutoMigrate
 {
-    /** Vérifie et crée les tables manquantes. */
+    /** Vérifie et crée les tables manquantes, puis lance les migrations. */
     public static function run(): void
     {
         $db = Connection::get();
 
         // Vérifier si la table principale existe déjà
         $check = $db->query("SHOW TABLES LIKE 'sc_sites'");
-        if ($check->rowCount() > 0) {
-            return; // Déjà migré
+        if ($check->rowCount() === 0) {
+            // Première installation : créer toutes les tables
+            $db->exec(self::getSchema());
         }
 
-        // Créer toutes les tables d'un coup
-        $db->exec(self::getSchema());
+        // Migrations incrémentales
+        self::runMigrations($db);
+    }
+
+    /** Migrations incrémentales : ajout de colonnes manquantes. */
+    private static function runMigrations(PDO $db): void
+    {
+        // Migration : ajout user_id à sc_oauth_tokens
+        if (!self::columnExists($db, 'sc_oauth_tokens', 'user_id')) {
+            $db->exec("ALTER TABLE sc_oauth_tokens ADD COLUMN user_id INT UNSIGNED NOT NULL DEFAULT 0");
+            $db->exec("CREATE INDEX idx_sc_oauth_user ON sc_oauth_tokens (user_id)");
+        }
+
+        // Migration : ajout user_id à sc_sites
+        if (!self::columnExists($db, 'sc_sites', 'user_id')) {
+            $db->exec("ALTER TABLE sc_sites ADD COLUMN user_id INT UNSIGNED NOT NULL DEFAULT 0");
+            $db->exec("CREATE INDEX idx_sc_sites_user ON sc_sites (user_id)");
+            // Mettre à jour la contrainte unique : un même site_url peut exister pour différents users
+            $db->exec("ALTER TABLE sc_sites DROP INDEX uq_sc_site_url");
+            $db->exec("ALTER TABLE sc_sites ADD UNIQUE KEY uq_sc_site_user (site_url, user_id)");
+        }
+
+        // Migration : ajout user_id à sc_sync_jobs
+        if (!self::columnExists($db, 'sc_sync_jobs', 'user_id')) {
+            $db->exec("ALTER TABLE sc_sync_jobs ADD COLUMN user_id INT UNSIGNED NOT NULL DEFAULT 0");
+            $db->exec("CREATE INDEX idx_sc_syncjobs_user ON sc_sync_jobs (user_id)");
+        }
+    }
+
+    /** Vérifie si une colonne existe dans une table. */
+    private static function columnExists(PDO $db, string $table, string $column): bool
+    {
+        $stmt = $db->prepare("SHOW COLUMNS FROM `{$table}` LIKE :col");
+        $stmt->execute(['col' => $column]);
+        return $stmt->rowCount() > 0;
     }
 
     private static function getSchema(): string
@@ -31,24 +66,28 @@ class AutoMigrate
             -- Sites enregistrés dans Search Console
             CREATE TABLE IF NOT EXISTS sc_sites (
                 id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                user_id     INT UNSIGNED  NOT NULL DEFAULT 0,
                 site_url    VARCHAR(500)  NOT NULL,
                 label       VARCHAR(255)  DEFAULT NULL,
                 active      TINYINT(1)    NOT NULL DEFAULT 1,
                 created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                UNIQUE KEY uq_sc_site_url (site_url)
+                UNIQUE KEY uq_sc_site_user (site_url, user_id),
+                INDEX idx_sc_sites_user (user_id)
             ) ENGINE=InnoDB;
 
             -- Tokens OAuth2
             CREATE TABLE IF NOT EXISTS sc_oauth_tokens (
                 id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                user_id         INT UNSIGNED  NOT NULL DEFAULT 0,
                 access_token    TEXT          NOT NULL,
                 refresh_token   TEXT          DEFAULT NULL,
                 token_type      VARCHAR(50)   DEFAULT 'Bearer',
                 expires_at      DATETIME      NOT NULL,
                 scope           TEXT          DEFAULT NULL,
                 created_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                updated_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_sc_oauth_user (user_id)
             ) ENGINE=InnoDB;
 
             -- Données de performance Search Console
@@ -124,6 +163,7 @@ class AutoMigrate
             -- Jobs de synchronisation
             CREATE TABLE IF NOT EXISTS sc_sync_jobs (
                 id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                user_id         INT UNSIGNED    NOT NULL DEFAULT 0,
                 site_id         INT UNSIGNED    DEFAULT NULL,
                 total_tasks     INT UNSIGNED    NOT NULL DEFAULT 0,
                 completed_tasks INT UNSIGNED    NOT NULL DEFAULT 0,
@@ -133,7 +173,8 @@ class AutoMigrate
                 log_file        VARCHAR(500)    DEFAULT NULL,
                 started_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 finished_at     DATETIME        DEFAULT NULL,
-                CONSTRAINT fk_sc_syncjob_site FOREIGN KEY (site_id) REFERENCES sc_sites(id) ON DELETE SET NULL
+                CONSTRAINT fk_sc_syncjob_site FOREIGN KEY (site_id) REFERENCES sc_sites(id) ON DELETE SET NULL,
+                INDEX idx_sc_syncjobs_user (user_id)
             ) ENGINE=InnoDB;
 
             -- FK sync_logs → sync_jobs

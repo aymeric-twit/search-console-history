@@ -31,11 +31,14 @@ try {
     } elseif ($internalPath === '/auth/logout') {
         (new \App\Controller\AuthController())->logout();
 
-    // --- Routes API publiques (pas d'auth requise) ---
+    // --- Routes API publiques (pas d'auth GSC requise, mais user_id utilisé) ---
     } elseif ($internalPath === '/api/gsc-status') {
-        $oauth = new \App\Auth\GoogleOAuth();
         $configure = !empty($_ENV['GOOGLE_CLIENT_ID']) && !empty($_ENV['GOOGLE_CLIENT_SECRET']);
-        $connecte = $configure && $oauth->hasToken();
+        $connecte = false;
+        if ($configure) {
+            $oauth = new \App\Auth\GoogleOAuth(); // utilise UserContext::id() automatiquement
+            $connecte = $oauth->hasToken();
+        }
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['configure' => $configure, 'connecte' => $connecte]);
     } elseif ($internalPath === '/api/auth-url') {

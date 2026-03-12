@@ -2,6 +2,7 @@
 
 namespace App\Model;
 
+use App\Auth\UserContext;
 use App\Database\Connection;
 use PDO;
 
@@ -12,10 +13,12 @@ use PDO;
 class SyncLog
 {
     private PDO $db;
+    private int $userId;
 
-    public function __construct()
+    public function __construct(?int $userId = null)
     {
         $this->db = Connection::get();
+        $this->userId = $userId ?? UserContext::id();
     }
 
     /** Démarre un nouvel enregistrement de sync. */
@@ -37,7 +40,7 @@ class SyncLog
         return (int) $this->db->lastInsertId();
     }
 
-    /** Ecrit le nombre total de chunks pour un log. */
+    /** Écrit le nombre total de chunks pour un log. */
     public function setChunks(int $logId, int $total): void
     {
         $stmt = $this->db->prepare(
@@ -46,7 +49,7 @@ class SyncLog
         $stmt->execute(['id' => $logId, 'total' => $total]);
     }
 
-    /** Incremente done_chunks de 1. */
+    /** Incrémente done_chunks de 1. */
     public function advanceChunk(int $logId): void
     {
         $stmt = $this->db->prepare(
@@ -55,13 +58,13 @@ class SyncLog
         $stmt->execute(['id' => $logId]);
     }
 
-    /** Tache en cours (running) pour un job, avec site_url. */
+    /** Tâche en cours (running) pour un job, avec site_url. */
     public function findRunningByJob(int $jobId): ?array
     {
         $stmt = $this->db->prepare(
             'SELECT sl.*, s.site_url
              FROM sc_sync_logs sl
-             JOIN sc_sitess ON s.id = sl.site_id
+             JOIN sc_sites s ON s.id = sl.site_id
              WHERE sl.job_id = :job_id AND sl.status = "running"
              ORDER BY sl.id DESC LIMIT 1'
         );
@@ -71,13 +74,13 @@ class SyncLog
         return $row ?: null;
     }
 
-    /** Taches terminees (success/error) pour un job, avec site_url. */
+    /** Tâches terminées (success/error) pour un job, avec site_url. */
     public function completedByJob(int $jobId): array
     {
         $stmt = $this->db->prepare(
             'SELECT sl.*, s.site_url
              FROM sc_sync_logs sl
-             JOIN sc_sitess ON s.id = sl.site_id
+             JOIN sc_sites s ON s.id = sl.site_id
              WHERE sl.job_id = :job_id AND sl.status IN ("success","error","empty")
              ORDER BY sl.id ASC'
         );
@@ -121,7 +124,7 @@ class SyncLog
         $stmt->execute($params);
     }
 
-    /** Marque une sync comme vide (0 lignes retournees par l'API). */
+    /** Marque une sync comme vide (0 lignes retournées par l'API). */
     public function markEmpty(int $logId, float $duration): void
     {
         $stmt = $this->db->prepare(
@@ -154,16 +157,18 @@ class SyncLog
         ]);
     }
 
-    /** Derniers logs de synchronisation. */
+    /** Derniers logs de synchronisation de l'utilisateur courant. */
     public function recent(int $limit = 50): array
     {
         $stmt = $this->db->prepare(
             'SELECT sl.*, s.site_url
              FROM sc_sync_logs sl
-             JOIN sc_sitess ON s.id = sl.site_id
+             JOIN sc_sites s ON s.id = sl.site_id
+             WHERE s.user_id = :uid
              ORDER BY sl.id DESC
              LIMIT :lim'
         );
+        $stmt->bindValue('uid', $this->userId, PDO::PARAM_INT);
         $stmt->bindValue('lim', $limit, PDO::PARAM_INT);
         $stmt->execute();
 
@@ -184,7 +189,7 @@ class SyncLog
         return $row ?: null;
     }
 
-    /** Nettoie les sc_sync_logs orphelins (running sans process actif). */
+    /** Nettoie les sync_logs orphelins (running sans process actif). */
     public function cleanupOrphans(): int
     {
         $stmt = $this->db->prepare(

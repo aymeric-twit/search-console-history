@@ -33,15 +33,19 @@ class SyncController
     private array $searchTypes;
     private ?int $jobId = null;
 
-    public function __construct()
+    /**
+     * @param int|null $userId ID utilisateur explicite (pour le mode CLI).
+     *                         Si null, utilise UserContext::id().
+     */
+    public function __construct(?int $userId = null)
     {
-        $auth = new GoogleOAuth();
+        $auth = new GoogleOAuth($userId);
         $this->api        = new SearchConsoleAPI($auth);
         $this->perfModel  = new PerformanceData();
         $this->dailyModel = new PerformanceDaily();
-        $this->siteModel  = new Site();
-        $this->syncLog    = new SyncLog();
-        $this->syncJob    = new SyncJob();
+        $this->siteModel  = new Site($userId);
+        $this->syncLog    = new SyncLog($userId);
+        $this->syncJob    = new SyncJob($userId);
 
         $this->daysBack    = (int) ($_ENV['SYNC_DAYS_BACK']    ?? 480);
         $this->dataState   = $_ENV['SYNC_DATA_STATE']          ?? 'all';

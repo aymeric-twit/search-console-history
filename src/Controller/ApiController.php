@@ -342,6 +342,15 @@ class ApiController
         $from   = $_GET['from'] ?? date('Y-m-d', strtotime('-33 days'));
         $to     = $_GET['to']   ?? date('Y-m-d', strtotime('-3 days'));
 
+        // Vérifier que le site appartient à l'utilisateur courant
+        if ($siteId > 0) {
+            $site = $this->siteModel->find($siteId);
+            if (!$site) {
+                $this->json(['error' => 'Site non trouvé ou accès refusé'], 403);
+                exit;
+            }
+        }
+
         return [$siteId, $from, $to, $this->parseFilters()];
     }
 
