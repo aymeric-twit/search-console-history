@@ -16,13 +16,6 @@ class AuthController
         $this->oauth = new GoogleOAuth();
     }
 
-    /** Page d'accueil auth : affiche le statut et le bouton de connexion. */
-    public function index(): void
-    {
-        $hasToken = $this->oauth->hasToken();
-        require __DIR__ . '/../../templates/auth.php';
-    }
-
     /** Redirige vers Google pour lancer le flux OAuth. */
     public function login(): void
     {
@@ -31,23 +24,19 @@ class AuthController
         exit;
     }
 
-    /** Callback OAuth : échange le code et redirige vers le dashboard. */
+    /** Callback OAuth : échange le code et ferme la popup. */
     public function callback(): void
     {
         if (empty($_GET['code'])) {
-            http_response_code(400);
-            echo 'Paramètre "code" manquant.';
+            $this->fermerPopup(false, 'Paramètre "code" manquant.');
             return;
         }
 
         try {
             $this->oauth->handleCallback($_GET['code']);
-            $prefix = defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '';
-            header('Location: ' . $prefix . '/');
-            exit;
+            $this->fermerPopup(true);
         } catch (\Throwable $e) {
-            http_response_code(500);
-            echo 'Erreur OAuth : ' . htmlspecialchars($e->getMessage());
+            $this->fermerPopup(false, $e->getMessage());
         }
     }
 
@@ -62,6 +51,26 @@ class AuthController
 
         $prefix = defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '';
         header('Location: ' . $prefix . '/');
+        exit;
+    }
+
+    /**
+     * Ferme la popup OAuth et notifie la fenêtre parente via postMessage.
+     * Fallback : redirige si la popup n'a pas de window.opener.
+     */
+    private function fermerPopup(bool $succes, string $erreur = ''): void
+    {
+        $donnees = $succes
+            ? json_encode(['succes' => true])
+            : json_encode(['succes' => false, 'erreur' => $erreur]);
+
+        $prefix = defined('MODULE_URL_PREFIX') ? MODULE_URL_PREFIX : '';
+        $fallbackUrl = $prefix . '/';
+
+        echo '<!DOCTYPE html><html><head><title>OAuth</title></head><body><script>';
+        echo 'if(window.opener){window.opener.postMessage(' . $donnees . ',"*");window.close();}';
+        echo 'else{window.location.href="' . htmlspecialchars($fallbackUrl) . '";}';
+        echo '</script></body></html>';
         exit;
     }
 }

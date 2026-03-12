@@ -1,6 +1,6 @@
 /* ============================================
-   Search Console Dashboard — Styles
-   Aligné sur la charte graphique plateforme SEO
+   Search Console History — Styles complémentaires
+   Complète Bootstrap 5 (fourni par la plateforme en embedded)
    ============================================ */
 
 :root {
@@ -22,25 +22,13 @@
     --shadow:           0 2px 8px rgba(0,76,76,0.06), 0 1px 3px rgba(0,0,0,0.04);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
 body {
     font-family: 'Poppins', system-ui, -apple-system, sans-serif;
     background: var(--brand-linen);
     color: var(--brand-anthracite);
-    line-height: 1.5;
 }
 
-::selection { background: rgba(102, 178, 178, 0.3); color: #fff; }
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-a { color: var(--brand-teal); text-decoration: none; }
-a:hover { color: var(--brand-dark); text-decoration: underline; }
-
-/* Layout */
+/* ── Navbar (standalone — supprimée par la plateforme en embedded) ── */
 .navbar {
     background: var(--brand-dark);
     border-bottom: 3px solid var(--brand-gold);
@@ -53,6 +41,7 @@ a:hover { color: var(--brand-dark); text-decoration: underline; }
     font-size: 1.1rem;
     font-weight: 700;
     color: #fff;
+    margin: 0;
 }
 .navbar h1 span {
     font-size: 0.8rem;
@@ -67,7 +56,7 @@ a:hover { color: var(--brand-dark); text-decoration: underline; }
     font-weight: 500;
     text-decoration: none;
 }
-.navbar nav a:hover { color: #fff; text-decoration: none; }
+.navbar nav a:hover { color: #fff; }
 .navbar nav a.active {
     color: #fff;
     font-weight: 600;
@@ -75,9 +64,81 @@ a:hover { color: var(--brand-dark); text-decoration: underline; }
     padding-bottom: 2px;
 }
 
-.container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+.container { max-width: 1400px; }
 
-/* KPI Cards */
+/* ── Card header (charte plateforme) ── */
+.card {
+    border-radius: 1rem;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+}
+.card-header {
+    background: linear-gradient(135deg, rgba(102,178,178,0.04) 0%, transparent 60%);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.25rem;
+    border-radius: 1rem 1rem 0 0;
+}
+.card-header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--brand-anthracite);
+    margin: 0;
+}
+.card-header h2 i {
+    color: var(--brand-teal);
+    margin-right: .5rem;
+}
+.card-body {
+    padding: 1.25rem;
+}
+
+/* ── GSC status badge ── */
+.gsc-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .8rem;
+    font-weight: 600;
+    padding: .35em .75em;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.gsc-status-badge .bi-circle-fill { font-size: .5rem; }
+.gsc-status-connecte {
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+.gsc-status-deconnecte {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+/* ── Boutons primaires (charte plateforme) ── */
+.btn-primary {
+    background-color: var(--brand-dark);
+    border-color: var(--brand-dark);
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #003838;
+    border-color: #003838;
+}
+
+/* ── Form focus (charte plateforme) ── */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--brand-teal);
+    box-shadow: 0 0 0 3px rgba(102,178,178,0.15);
+}
+.form-label {
+    font-weight: 600;
+    font-size: .85rem;
+    color: var(--text-secondary);
+}
+
+/* ── KPI Cards ── */
 .kpi-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -113,7 +174,7 @@ a:hover { color: var(--brand-dark); text-decoration: underline; }
 .kpi-card .diff.positive { color: var(--score-high); }
 .kpi-card .diff.negative { color: var(--score-low); }
 
-/* Charts */
+/* ── Charts ── */
 .chart-container {
     background: #fff;
     border-radius: 1rem;
@@ -135,7 +196,7 @@ a:hover { color: var(--brand-dark); text-decoration: underline; }
     border-radius: 1rem 1rem 0 0;
 }
 
-/* Tables */
+/* ── Tables ── */
 .data-table-wrap {
     background: #fff;
     border-radius: 1rem;
@@ -180,175 +241,11 @@ table.data-table tbody tr:nth-child(even) td { background: #f8fafc; }
 table.data-table tbody tr:hover td { background: var(--brand-teal-light); }
 table.data-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
-/* Filters bar */
-.filters-bar {
-    background: #fff;
-    border-radius: 1rem;
-    padding: 1rem 1.25rem;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border-color);
-    margin-bottom: 1.5rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: .75rem;
-    align-items: flex-end;
-}
-.filters-bar label {
-    font-size: .75rem;
-    color: var(--text-secondary);
-    display: block;
-    margin-bottom: .2rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .03em;
-}
-.filters-bar select,
-.filters-bar input {
-    padding: .4rem .6rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: .9rem;
-    font-family: inherit;
-    background: #fff;
-    color: var(--brand-anthracite);
-}
-.filters-bar select:focus,
-.filters-bar input:focus {
-    outline: none;
-    border-color: var(--brand-teal);
-    box-shadow: 0 0 0 0.2rem rgba(102,178,178,0.25);
-}
-.filters-bar button {
-    padding: .45rem 1.2rem;
-    background: var(--brand-dark);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: .9rem;
-    font-family: inherit;
-    font-weight: 600;
-    transition: background .2s;
-}
-.filters-bar button:hover { background: var(--brand-teal); }
-
-/* Grid layouts */
+/* ── Grid layouts ── */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
 
-/* Auth section */
-.auth-section {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 60vh;
-}
-.auth-card {
-    background: #fff;
-    border-radius: 1rem;
-    padding: 2.5rem;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border-color);
-    text-align: center;
-    max-width: 500px;
-    width: 100%;
-}
-.auth-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-    flex-wrap: wrap;
-}
-.auth-header h2 { margin: 0; color: var(--text-primary); font-size: 1.3rem; }
-.auth-description { color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6; }
-.auth-info { margin-top: 1.5rem; color: var(--text-muted); }
-.auth-info code {
-    background: var(--brand-teal-light);
-    color: var(--brand-dark);
-    padding: .15em .35em;
-    border-radius: .25rem;
-    font-size: .85em;
-}
-
-/* GSC status badge */
-.gsc-status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    font-size: .8rem;
-    font-weight: 600;
-    padding: .35em .75em;
-    border-radius: 20px;
-    white-space: nowrap;
-}
-.gsc-status-badge i { font-size: .5rem; font-style: normal; }
-.gsc-status-connecte {
-    background: #f0fdf4;
-    color: #16a34a;
-    border: 1px solid #bbf7d0;
-}
-.gsc-status-deconnecte {
-    background: #fef2f2;
-    color: #dc2626;
-    border: 1px solid #fecaca;
-}
-
-.gsc-alert-warning {
-    background: var(--brand-gold-light);
-    color: #92690d;
-    border: 1px solid #fbbf24;
-    border-radius: 6px;
-    padding: .5rem .75rem;
-    font-size: .85rem;
-    display: flex;
-    align-items: center;
-    gap: .4rem;
-}
-
-.btn {
-    display: inline-block;
-    padding: .6rem 1.5rem;
-    background: var(--brand-dark);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: .95rem;
-    font-family: inherit;
-    font-weight: 600;
-    text-decoration: none;
-    transition: background .2s;
-}
-.btn:hover { background: var(--brand-teal); text-decoration: none; color: #fff; }
-.btn-danger { background: var(--score-low); }
-.btn-danger:hover { background: #dc2626; }
-.btn-success { background: var(--score-high); }
-.btn-success:hover { background: #16a34a; }
-.btn-outline {
-    background: transparent;
-    color: var(--brand-dark);
-    border: 1px solid var(--brand-dark);
-}
-.btn-outline:hover { background: var(--brand-dark); color: #fff; }
-
-/* Status badges */
-.badge {
-    display: inline-block;
-    padding: .15rem .5rem;
-    border-radius: 3px;
-    font-size: .75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .05em;
-}
-.badge-success { background: #dcfce7; color: #166534; }
-.badge-empty   { background: var(--brand-gold-light); color: #92690d; }
-.badge-error   { background: #fee2e2; color: #991b1b; }
-.badge-running { background: var(--brand-teal-light); color: var(--brand-dark); }
-
-/* Truncate long text */
+/* ── Truncate ── */
 .truncate {
     max-width: 400px;
     white-space: nowrap;
@@ -356,7 +253,13 @@ table.data-table td.num { text-align: right; font-variant-numeric: tabular-nums;
     text-overflow: ellipsis;
 }
 
-/* Sync progress card */
+/* ── Status badges ── */
+.badge-success { background: #dcfce7; color: #166534; }
+.badge-empty   { background: var(--brand-gold-light); color: #92690d; }
+.badge-error   { background: #fee2e2; color: #991b1b; }
+.badge-running { background: var(--brand-teal-light); color: var(--brand-dark); }
+
+/* ── Sync progress ── */
 .sync-progress-card {
     background: #fff;
     border-radius: 1rem;
@@ -377,7 +280,6 @@ table.data-table td.num { text-align: right; font-variant-numeric: tabular-nums;
     margin-bottom: .5rem;
 }
 
-/* Progress bar */
 .progress-bar-track {
     width: 100%;
     height: 12px;
@@ -393,12 +295,8 @@ table.data-table td.num { text-align: right; font-variant-numeric: tabular-nums;
     transition: width .4s ease;
     min-width: 0;
 }
-.progress-bar-fill.done {
-    background: var(--score-high);
-}
-.progress-bar-fill.error {
-    background: var(--score-low);
-}
+.progress-bar-fill.done { background: var(--score-high); }
+.progress-bar-fill.error { background: var(--score-low); }
 
 .sync-percent {
     font-size: .85rem;
@@ -407,7 +305,6 @@ table.data-table td.num { text-align: right; font-variant-numeric: tabular-nums;
     margin-bottom: .75rem;
 }
 
-/* Task list in progress card */
 .sync-task-list {
     list-style: none;
     padding: 0;

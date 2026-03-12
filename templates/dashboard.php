@@ -6,99 +6,103 @@ $authenticated = $this->authenticated ?? false;
 ob_start();
 ?>
 
-<!-- ── Section connexion GSC ── -->
-<div class="chart-container" style="margin-bottom:1.5rem">
-    <h3>Google Search Console</h3>
-    <div style="padding:0 .25rem">
-        <div style="display:flex; align-items:center; gap:.75rem; flex-wrap:wrap">
-            <?php if ($authenticated): ?>
-                <span class="gsc-status-badge gsc-status-connecte">
-                    <i>&#9679;</i> Connecté
+<!-- ── Card principale : connexion + filtres ── -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h2><i class="bi bi-graph-up"></i> Google Search Console</h2>
+    </div>
+    <div class="card-body">
+
+        <!-- Section connexion GSC -->
+        <div id="gsc-connexion-section" class="mb-3">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <span id="gsc-badge-statut" class="gsc-status-badge gsc-status-deconnecte">
+                    <i class="bi bi-circle-fill"></i> <span id="gsc-badge-text">Vérification...</span>
                 </span>
-                <a href="<?= $prefix ?>/auth/logout" class="btn btn-outline" style="padding:.3rem .8rem; font-size:.85rem">
-                    <i class="bi bi-box-arrow-left"></i> Déconnecter
-                </a>
-            <?php elseif (!empty($oauthConfigure)): ?>
-                <span class="gsc-status-badge gsc-status-deconnecte">
-                    <i>&#9679;</i> Non connecté
-                </span>
-                <a href="<?= htmlspecialchars($authUrl) ?>" class="btn" style="padding:.3rem .8rem; font-size:.85rem">
+                <button type="button" class="btn btn-sm btn-primary d-none" id="btn-connecter-gsc" onclick="connecterGsc()">
                     <i class="bi bi-google"></i> Connecter Google Search Console
-                </a>
-            <?php else: ?>
-                <span class="gsc-status-badge gsc-status-deconnecte">
-                    <i>&#9679;</i> Non connecté
-                </span>
-                <div class="gsc-alert-warning">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    La connexion Google Search Console n'est pas configurée. Contactez l'administrateur.
-                </div>
-            <?php endif; ?>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="btn-deconnecter-gsc" onclick="deconnecterGsc()">
+                    <i class="bi bi-box-arrow-left"></i> Déconnecter
+                </button>
+            </div>
+            <div id="gsc-erreur-oauth" class="alert alert-danger d-none" role="alert"></div>
+            <div id="gsc-non-configure" class="alert alert-warning d-none">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                La connexion Google Search Console n'est pas disponible. Contactez l'administrateur.
+            </div>
         </div>
 
-        <?php if ($authenticated && !empty($sites)): ?>
-        <p style="margin-top:.75rem; font-size:.85rem; color:var(--text-secondary)">
-            <?= count($sites) ?> propriété(s) GSC synchronisée(s).
-            Scope : <code style="background:var(--brand-teal-light);color:var(--brand-dark);padding:.1em .3em;border-radius:3px;font-size:.8em">webmasters.readonly</code> (lecture seule).
-        </p>
-        <?php elseif ($authenticated && empty($sites)): ?>
-        <p style="margin-top:.75rem; font-size:.85rem; color:var(--text-secondary)">
+        <!-- Formulaire filtres (visible si connecté + sites) -->
+        <form id="dashboard-filters" method="GET" action="<?= $prefix ?>/" class="<?= ($authenticated && !empty($sites)) ? '' : 'd-none' ?>">
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <label for="site_id" class="form-label">Propriété GSC</label>
+                    <select name="site_id" id="site_id" class="form-select">
+                        <?php foreach ($sites ?? [] as $s): ?>
+                            <option value="<?= $s['id'] ?>" <?= ($s['id'] ?? 0) == ($siteId ?? 0) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($s['label'] ?: $s['site_url']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="from" class="form-label">Date de début</label>
+                    <input type="date" name="from" id="from" class="form-control" value="<?= htmlspecialchars($from ?? '') ?>">
+                </div>
+                <div class="col-md-2">
+                    <label for="to" class="form-label">Date de fin</label>
+                    <input type="date" name="to" id="to" class="form-control" value="<?= htmlspecialchars($to ?? '') ?>">
+                </div>
+                <div class="col-md-2">
+                    <label for="device" class="form-label">Appareil</label>
+                    <select name="device" id="device" class="form-select">
+                        <option value="">Tous</option>
+                        <option value="DESKTOP" <?= ($filters['device'] ?? '') === 'DESKTOP' ? 'selected' : '' ?>>Desktop</option>
+                        <option value="MOBILE" <?= ($filters['device'] ?? '') === 'MOBILE' ? 'selected' : '' ?>>Mobile</option>
+                        <option value="TABLET" <?= ($filters['device'] ?? '') === 'TABLET' ? 'selected' : '' ?>>Tablet</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label for="country" class="form-label">Pays</label>
+                    <input type="text" name="country" id="country" class="form-control" placeholder="FRA" value="<?= htmlspecialchars($filters['country'] ?? '') ?>">
+                </div>
+            </div>
+
+            <!-- Filtres avancés -->
+            <div class="mb-3">
+                <a class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" href="#filtres-avances" role="button">
+                    <i class="bi bi-sliders"></i> Filtres avancés
+                </a>
+                <div class="collapse mt-2" id="filtres-avances">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="filter_query" class="form-label">Requête</label>
+                            <input type="text" name="filter_query" id="filter_query" class="form-control" placeholder="Filtrer par mot-clé..." value="<?= htmlspecialchars($filters['query'] ?? '') ?>">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="filter_page" class="form-label">Page</label>
+                            <input type="text" name="filter_page" id="filter_page" class="form-control" placeholder="/chemin..." value="<?= htmlspecialchars($filters['page'] ?? '') ?>">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-funnel"></i> Filtrer
+            </button>
+        </form>
+
+        <?php if ($authenticated && empty($sites ?? [])): ?>
+        <p class="text-muted mt-2 mb-0">
             Aucun site importé. <a href="<?= $prefix ?>/sync-status">Lancez une synchronisation</a> pour importer vos propriétés.
         </p>
-        <?php elseif (!$authenticated): ?>
-        <p style="margin-top:.75rem; font-size:.85rem; color:var(--text-secondary)">
-            Connectez-vous pour synchroniser et visualiser vos données Search Console
-            (clics, impressions, positions, requêtes).
-        </p>
         <?php endif; ?>
+
     </div>
 </div>
 
 <?php if ($authenticated && !empty($sites)): ?>
-
-<!-- Barre de filtres -->
-<form class="filters-bar" method="GET" action="<?= $prefix ?>/">
-    <div>
-        <label for="site_id">Site</label>
-        <select name="site_id" id="site_id">
-            <?php foreach ($sites as $s): ?>
-                <option value="<?= $s['id'] ?>" <?= $s['id'] == $siteId ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($s['label'] ?: $s['site_url']) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-    <div>
-        <label for="from">Du</label>
-        <input type="date" name="from" id="from" value="<?= htmlspecialchars($from) ?>">
-    </div>
-    <div>
-        <label for="to">Au</label>
-        <input type="date" name="to" id="to" value="<?= htmlspecialchars($to) ?>">
-    </div>
-    <div>
-        <label for="device">Appareil</label>
-        <select name="device" id="device">
-            <option value="">Tous</option>
-            <option value="DESKTOP" <?= ($filters['device'] ?? '') === 'DESKTOP' ? 'selected' : '' ?>>Desktop</option>
-            <option value="MOBILE" <?= ($filters['device'] ?? '') === 'MOBILE' ? 'selected' : '' ?>>Mobile</option>
-            <option value="TABLET" <?= ($filters['device'] ?? '') === 'TABLET' ? 'selected' : '' ?>>Tablet</option>
-        </select>
-    </div>
-    <div>
-        <label for="country">Pays</label>
-        <input type="text" name="country" id="country" placeholder="ex: FRA" value="<?= htmlspecialchars($filters['country'] ?? '') ?>" style="width:80px">
-    </div>
-    <div>
-        <label for="filter_query">Requête</label>
-        <input type="text" name="filter_query" id="filter_query" placeholder="Filtrer..." value="<?= htmlspecialchars($filters['query'] ?? '') ?>">
-    </div>
-    <div>
-        <label for="filter_page">Page</label>
-        <input type="text" name="filter_page" id="filter_page" placeholder="/chemin..." value="<?= htmlspecialchars($filters['page'] ?? '') ?>">
-    </div>
-    <button type="submit">Filtrer</button>
-</form>
 
 <!-- KPI Cards -->
 <div class="kpi-grid">
@@ -181,27 +185,142 @@ ob_start();
     </div>
 </div>
 
-<!-- Paramètres pour le JS -->
-<script>
-window.dashboardParams = {
-    siteId: <?= (int)$siteId ?>,
-    from: '<?= htmlspecialchars($from) ?>',
-    to: '<?= htmlspecialchars($to) ?>',
-    searchType: '<?= htmlspecialchars($filters['search_type'] ?? 'web') ?>',
-    device: '<?= htmlspecialchars($filters['device'] ?? '') ?>',
-    country: '<?= htmlspecialchars($filters['country'] ?? '') ?>',
-    filterQuery: '<?= htmlspecialchars($filters['query'] ?? '') ?>',
-    filterPage: '<?= htmlspecialchars($filters['page'] ?? '') ?>'
-};
-window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
-</script>
-<script src="<?= $prefix ?>/assets/js/dashboard.js"></script>
+<?php endif; // fin $authenticated && !empty($sites) ?>
+
+<!-- JS : OAuth popup + chargement données -->
 <script>
 (function() {
-    var p = window.dashboardParams;
-    if (!p.siteId) return;
+    var baseUrl = window.MODULE_BASE_URL || '<?= $prefix ?>';
 
-    var baseUrl = window.MODULE_BASE_URL || '';
+    // ── OAuth popup : écouter postMessage ──
+    window.addEventListener('message', function(e) {
+        if (e.data && typeof e.data.succes !== 'undefined') {
+            if (e.data.succes) {
+                location.reload();
+            } else {
+                var erreurEl = document.getElementById('gsc-erreur-oauth');
+                if (erreurEl) {
+                    erreurEl.textContent = e.data.erreur || 'Erreur de connexion';
+                    erreurEl.classList.remove('d-none');
+                }
+                // Rétablir le bouton
+                var btn = document.getElementById('btn-connecter-gsc');
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-google"></i> Connecter Google Search Console'; }
+            }
+        }
+    });
+
+    // ── Vérifier le statut GSC au chargement ──
+    verifierStatutGsc();
+
+    function verifierStatutGsc() {
+        fetch(baseUrl + '/api/gsc-status')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (!data.configure) {
+                    var msgNonConfigure = document.getElementById('gsc-non-configure');
+                    if (msgNonConfigure) msgNonConfigure.classList.remove('d-none');
+                    mettreAJourUiGsc(false);
+                    return;
+                }
+
+                var btnConn = document.getElementById('btn-connecter-gsc');
+                if (btnConn && !data.connecte) btnConn.classList.remove('d-none');
+
+                mettreAJourUiGsc(data.connecte);
+            })
+            .catch(function() {
+                // Silencieux
+            });
+    }
+
+    function mettreAJourUiGsc(connecte) {
+        var badge     = document.getElementById('gsc-badge-statut');
+        var badgeText = document.getElementById('gsc-badge-text');
+        var btnConn   = document.getElementById('btn-connecter-gsc');
+        var btnDeco   = document.getElementById('btn-deconnecter-gsc');
+        var formEl    = document.getElementById('dashboard-filters');
+
+        if (badge) {
+            badge.className = 'gsc-status-badge ' + (connecte ? 'gsc-status-connecte' : 'gsc-status-deconnecte');
+        }
+        if (badgeText) {
+            badgeText.textContent = connecte ? 'Connecté' : 'Non connecté';
+        }
+        if (btnConn) btnConn.classList.toggle('d-none', connecte);
+        if (btnDeco) btnDeco.classList.toggle('d-none', !connecte);
+    }
+
+    // ── Connecter : ouvrir popup OAuth ──
+    window.connecterGsc = function() {
+        var btn = document.getElementById('btn-connecter-gsc');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Connexion...'; }
+
+        // Masquer l'erreur précédente
+        var erreurEl = document.getElementById('gsc-erreur-oauth');
+        if (erreurEl) erreurEl.classList.add('d-none');
+
+        fetch(baseUrl + '/api/auth-url')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.url) {
+                    var largeur = 600, hauteur = 700;
+                    var gauche = (screen.width - largeur) / 2;
+                    var haut   = (screen.height - hauteur) / 2;
+                    window.open(
+                        data.url,
+                        'gsc_oauth_popup',
+                        'width=' + largeur + ',height=' + hauteur + ',left=' + gauche + ',top=' + haut + ',scrollbars=yes'
+                    );
+                } else {
+                    if (erreurEl) {
+                        erreurEl.textContent = data.error || 'Erreur de connexion';
+                        erreurEl.classList.remove('d-none');
+                    }
+                }
+            })
+            .catch(function() {
+                if (erreurEl) {
+                    erreurEl.textContent = 'Erreur réseau';
+                    erreurEl.classList.remove('d-none');
+                }
+            })
+            .finally(function() {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-google"></i> Connecter Google Search Console'; }
+            });
+    };
+
+    // ── Déconnecter : appel AJAX ──
+    window.deconnecterGsc = function() {
+        var btn = document.getElementById('btn-deconnecter-gsc');
+        if (btn) btn.disabled = true;
+
+        fetch(baseUrl + '/api/logout', { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.succes) {
+                    location.reload();
+                }
+            })
+            .catch(function() {})
+            .finally(function() {
+                if (btn) btn.disabled = false;
+            });
+    };
+
+<?php if ($authenticated && !empty($sites) && ($siteId ?? 0) > 0): ?>
+    // ── Chargement des données dashboard ──
+    var p = {
+        siteId: <?= (int)$siteId ?>,
+        from: '<?= htmlspecialchars($from) ?>',
+        to: '<?= htmlspecialchars($to) ?>',
+        searchType: '<?= htmlspecialchars($filters['search_type'] ?? 'web') ?>',
+        device: '<?= htmlspecialchars($filters['device'] ?? '') ?>',
+        country: '<?= htmlspecialchars($filters['country'] ?? '') ?>',
+        filterQuery: '<?= htmlspecialchars($filters['query'] ?? '') ?>',
+        filterPage: '<?= htmlspecialchars($filters['page'] ?? '') ?>'
+    };
+
     var qs = 'site_id=' + p.siteId + '&from=' + p.from + '&to=' + p.to
         + '&search_type=' + encodeURIComponent(p.searchType)
         + (p.device ? '&device=' + encodeURIComponent(p.device) : '')
@@ -216,7 +335,6 @@ window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
     function fmt(n) { return Number(n || 0).toLocaleString('fr-FR'); }
     function escapeHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-    // Charger toutes les données en parallèle
     Promise.all([
         fetch(baseUrl + '/api/compare?' + qsCompare).then(function(r) { return r.json(); }),
         fetch(baseUrl + '/api/daily-trend?' + qs).then(function(r) { return r.json(); }),
@@ -245,13 +363,9 @@ window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
         setDiff('kpi-position-diff', d.position, true, '', 1);
 
         // Graphiques
-        window.dashboardData.dailyTrend = trend;
+        window.dashboardData = { dailyTrend: trend, devices: devices, countries: countries };
         if (typeof window.renderTrendChart === 'function') window.renderTrendChart(trend);
-
-        window.dashboardData.devices = devices;
         if (typeof window.renderDeviceChart === 'function') window.renderDeviceChart(devices);
-
-        window.dashboardData.countries = countries;
         if (typeof window.renderCountryChart === 'function') window.renderCountryChart(countries);
 
         // Top requêtes
@@ -313,10 +427,12 @@ window.dashboardData = { dailyTrend: [], devices: [], countries: [] };
         d.setDate(d.getDate() - 1);
         return d.toISOString().slice(0, 10);
     }
+<?php endif; ?>
 })();
 </script>
-
-<?php endif; // fin $authenticated && !empty($sites) ?>
+<?php if ($authenticated && !empty($sites)): ?>
+<script src="<?= $prefix ?>/assets/js/dashboard.js"></script>
+<?php endif; ?>
 
 <?php
 $content = ob_get_clean();

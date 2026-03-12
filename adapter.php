@@ -31,7 +31,33 @@ try {
     } elseif ($internalPath === '/auth/logout') {
         (new \App\Controller\AuthController())->logout();
 
-    // --- Routes API ---
+    // --- Routes API publiques (pas d'auth requise) ---
+    } elseif ($internalPath === '/api/gsc-status') {
+        $oauth = new \App\Auth\GoogleOAuth();
+        $configure = !empty($_ENV['GOOGLE_CLIENT_ID']) && !empty($_ENV['GOOGLE_CLIENT_SECRET']);
+        $connecte = $configure && $oauth->hasToken();
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['configure' => $configure, 'connecte' => $connecte]);
+    } elseif ($internalPath === '/api/auth-url') {
+        header('Content-Type: application/json; charset=utf-8');
+        if (empty($_ENV['GOOGLE_CLIENT_ID']) || empty($_ENV['GOOGLE_CLIENT_SECRET'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'OAuth non configuré']);
+        } else {
+            $oauth = new \App\Auth\GoogleOAuth();
+            echo json_encode(['url' => $oauth->getAuthUrl()]);
+        }
+    } elseif ($internalPath === '/api/logout' && $method === 'POST') {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $oauth = new \App\Auth\GoogleOAuth();
+            $oauth->revokeToken();
+        } catch (\Throwable $e) {
+            // Ignorer les erreurs de révocation
+        }
+        echo json_encode(['succes' => true]);
+
+    // --- Routes API (auth requise) ---
     } elseif ($internalPath === '/api/sites') {
         (new \App\Controller\ApiController())->sites();
     } elseif ($internalPath === '/api/daily-trend') {

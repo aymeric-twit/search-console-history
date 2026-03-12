@@ -28,6 +28,9 @@
         { "path": "api/sync-logs", "method": "GET", "type": "ajax" },
         { "path": "api/sync", "method": "POST", "type": "ajax" },
         { "path": "api/sync-progress", "method": "GET", "type": "ajax" },
-        { "path": "api/sync-diagnostic", "method": "GET", "type": "ajax" }
+        { "path": "api/sync-diagnostic", "method": "GET", "type": "ajax" },
+        { "path": "api/gsc-status", "method": "GET", "type": "ajax" },
+        { "path": "api/auth-url", "method": "GET", "type": "ajax" },
+        { "path": "api/logout", "method": "POST", "type": "ajax" }
     ]
 }

@@ -30,13 +30,9 @@ class DashboardController
         }
     }
 
-    /** Page principale : section connexion + dashboard si connecté. */
+    /** Page principale : connexion GSC + dashboard si connecté. */
     public function index(): void
     {
-        // Vérifier si OAuth est configuré
-        $oauthConfigure = !empty($_ENV['GOOGLE_CLIENT_ID']) && !empty($_ENV['GOOGLE_CLIENT_SECRET']);
-        $authUrl = $oauthConfigure && !$this->authenticated ? $this->oauth->getAuthUrl() : '';
-
         // Variables dashboard (vides si non connecté)
         $sites = [];
         $siteId = 0;
@@ -46,15 +42,11 @@ class DashboardController
 
         if ($this->authenticated) {
             $sites = $this->siteModel->allActive();
-
-            // Site sélectionné (par défaut le premier)
             $siteId = isset($_GET['site_id']) ? (int) $_GET['site_id'] : ($sites[0]['id'] ?? 0);
 
-            // Période par défaut : 30 derniers jours
             $to   = $_GET['to']   ?? date('Y-m-d', strtotime('-3 days'));
             $from = $_GET['from'] ?? date('Y-m-d', strtotime("{$to} -29 days"));
 
-            // Filtres
             $filters = array_filter([
                 'device'      => $_GET['device']      ?? '',
                 'country'     => $_GET['country']      ?? '',
