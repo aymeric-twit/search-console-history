@@ -9,28 +9,110 @@
     "quota_mode": "none",
     "default_quota": 0,
     "display_mode": "embedded",
-    "env_keys": ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REDIRECT_URI"],
+    "env_keys": [
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "GOOGLE_REDIRECT_URI"
+    ],
     "api_doc_url": "https://developers.google.com/webmaster-tools/v1/how-tos/authorizing",
     "languages": [],
+    "api_credits_period": "mensuel",
+    "api_credits_default": 0,
     "routes": [
-        { "path": "auth/login", "method": "GET", "type": "ajax" },
-        { "path": "auth/callback", "method": "GET", "type": "ajax" },
-        { "path": "auth/logout", "method": "GET", "type": "ajax" },
-        { "path": "sync-status", "method": "GET", "type": "page" },
-        { "path": "api/sites", "method": "GET", "type": "ajax" },
-        { "path": "api/daily-trend", "method": "GET", "type": "ajax" },
-        { "path": "api/top-queries", "method": "GET", "type": "ajax" },
-        { "path": "api/top-pages", "method": "GET", "type": "ajax" },
-        { "path": "api/devices", "method": "GET", "type": "ajax" },
-        { "path": "api/countries", "method": "GET", "type": "ajax" },
-        { "path": "api/totals", "method": "GET", "type": "ajax" },
-        { "path": "api/compare", "method": "GET", "type": "ajax" },
-        { "path": "api/sync-logs", "method": "GET", "type": "ajax" },
-        { "path": "api/sync", "method": "POST", "type": "ajax" },
-        { "path": "api/sync-progress", "method": "GET", "type": "ajax" },
-        { "path": "api/sync-diagnostic", "method": "GET", "type": "ajax" },
-        { "path": "api/gsc-status", "method": "GET", "type": "ajax" },
-        { "path": "api/auth-url", "method": "GET", "type": "ajax" },
-        { "path": "api/logout", "method": "POST", "type": "ajax" }
+        {
+            "path": "auth/login",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "auth/callback",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "auth/logout",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "sync-status",
+            "method": "GET",
+            "type": "page"
+        },
+        {
+            "path": "api/sites",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/daily-trend",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/top-queries",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/top-pages",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/devices",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/countries",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/totals",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/compare",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/sync-logs",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/sync",
+            "method": "POST",
+            "type": "ajax"
+        },
+        {
+            "path": "api/sync-progress",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/sync-diagnostic",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/gsc-status",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/auth-url",
+            "method": "GET",
+            "type": "ajax"
+        },
+        {
+            "path": "api/logout",
+            "method": "POST",
+            "type": "ajax"
+        }
     ]
 }
