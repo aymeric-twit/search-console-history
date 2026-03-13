@@ -123,7 +123,6 @@ ob_start();
         <ul class="mb-0">
             <li>Aucun quota — synchronisation illimitée.</li>
         </ul>
-        <span class="help-toggle-btn">▼ Voir plus</span>
     </div>
 </div>
 </div>
@@ -456,13 +455,9 @@ ob_start();
 <?php endif; ?>
 
     // --- Help panel collapse ---
-    var panel = document.querySelector('.config-help-panel');
-    var hBtn = panel ? panel.querySelector('.help-toggle-btn') : null;
-    if (panel && hBtn) {
-        hBtn.addEventListener('click', function () {
-            panel.classList.toggle('expanded');
-            hBtn.textContent = panel.classList.contains('expanded') ? '▲ Réduire' : '▼ Voir plus';
-        });
+    function collapserHelpPanel() {
+        var panel = document.getElementById('helpPanel');
+        if (panel) panel.classList.add('help-hidden');
     }
 })();
 </script>
