@@ -7,7 +7,9 @@ ob_start();
 ?>
 
 <!-- ── Card principale : connexion + filtres ── -->
-<div class="card mb-4">
+<div class="row g-4 mb-4">
+<div class="col-lg-8">
+<div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h2><i class="bi bi-graph-up"></i> Google Search Console</h2>
     </div>
@@ -100,6 +102,30 @@ ob_start();
         <?php endif; ?>
 
     </div>
+</div>
+</div>
+<div class="col-lg-4" id="helpPanel">
+    <div class="config-help-panel">
+        <div class="help-title mb-2">
+            <i class="bi bi-info-circle me-1"></i> Comment ça marche
+        </div>
+        <ul>
+            <li><strong>Connexion OAuth</strong> : connectez votre compte Google pour accéder à Search Console.</li>
+            <li><strong>Synchronisation</strong> : les données sont synchronisées automatiquement.</li>
+            <li><strong>Tendances</strong> : consultez les tendances quotidiennes (clics, impressions, CTR, position).</li>
+            <li><strong>Segments</strong> : filtrez par requête, page, appareil et pays.</li>
+            <li><strong>Comparaison</strong> : comparez deux périodes pour détecter les évolutions.</li>
+        </ul>
+        <hr>
+        <div class="help-title mb-2">
+            <i class="bi bi-infinity me-1"></i> Quota
+        </div>
+        <ul class="mb-0">
+            <li>Aucun quota — synchronisation illimitée.</li>
+        </ul>
+        <span class="help-toggle-btn">▼ Voir plus</span>
+    </div>
+</div>
 </div>
 
 <?php if ($authenticated && !empty($sites)): ?>
@@ -428,6 +454,16 @@ ob_start();
         return d.toISOString().slice(0, 10);
     }
 <?php endif; ?>
+
+    // --- Help panel collapse ---
+    var panel = document.querySelector('.config-help-panel');
+    var hBtn = panel ? panel.querySelector('.help-toggle-btn') : null;
+    if (panel && hBtn) {
+        hBtn.addEventListener('click', function () {
+            panel.classList.toggle('expanded');
+            hBtn.textContent = panel.classList.contains('expanded') ? '▲ Réduire' : '▼ Voir plus';
+        });
+    }
 })();
 </script>
 <?php if ($authenticated && !empty($sites)): ?>
