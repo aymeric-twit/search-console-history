@@ -40,9 +40,23 @@ class AutoMigrate
         if (!self::columnExists($db, 'sc_sites', 'user_id')) {
             $db->exec("ALTER TABLE sc_sites ADD COLUMN user_id INT UNSIGNED NOT NULL DEFAULT 0");
             $db->exec("CREATE INDEX idx_sc_sites_user ON sc_sites (user_id)");
-            // Mettre à jour la contrainte unique : un même site_url peut exister pour différents users
-            $db->exec("ALTER TABLE sc_sites DROP INDEX uq_sc_site_url");
-            $db->exec("ALTER TABLE sc_sites ADD UNIQUE KEY uq_sc_site_user (site_url, user_id)");
+            // Supprimer l'ancienne contrainte unique (nom peut varier)
+            try {
+                $db->exec("ALTER TABLE sc_sites DROP INDEX uq_sc_site_url");
+            } catch (\Throwable $e) {
+                // L'index peut avoir un autre nom — chercher et supprimer
+                try {
+                    $db->exec("ALTER TABLE sc_sites DROP INDEX site_url");
+                } catch (\Throwable $e2) {
+                    // Ignorer si l'index n'existe pas
+                }
+            }
+            // Ajouter la nouvelle contrainte unique (site_url + user_id)
+            try {
+                $db->exec("ALTER TABLE sc_sites ADD UNIQUE KEY uq_sc_site_user (site_url, user_id)");
+            } catch (\Throwable $e) {
+                // Ignorer si elle existe déjà
+            }
         }
 
         // Migration : ajout user_id à sc_sync_jobs
