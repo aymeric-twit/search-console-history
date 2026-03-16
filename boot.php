@@ -47,8 +47,4 @@ foreach ($clesDb as $cle) {
 }
 
 // Auto-migration : créer les tables du plugin si elles n'existent pas
-try {
-    \App\Database\AutoMigrate::run();
-} catch (\Throwable $e) {
-    error_log('[search-console-history] AutoMigrate error: ' . $e->getMessage());
-}
+\App\Database\AutoMigrate::run();

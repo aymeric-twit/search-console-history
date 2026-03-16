@@ -40,22 +40,14 @@ class AutoMigrate
         if (!self::columnExists($db, 'sc_sites', 'user_id')) {
             $db->exec("ALTER TABLE sc_sites ADD COLUMN user_id INT UNSIGNED NOT NULL DEFAULT 0");
             $db->exec("CREATE INDEX idx_sc_sites_user ON sc_sites (user_id)");
-            // Supprimer l'ancienne contrainte unique (nom peut varier)
-            try {
-                $db->exec("ALTER TABLE sc_sites DROP INDEX uq_sc_site_url");
-            } catch (\Throwable $e) {
-                // L'index peut avoir un autre nom — chercher et supprimer
-                try {
-                    $db->exec("ALTER TABLE sc_sites DROP INDEX site_url");
-                } catch (\Throwable $e2) {
-                    // Ignorer si l'index n'existe pas
-                }
+            // Supprimer l'ancienne contrainte unique sur site_url seul
+            $ancienIndex = self::findIndexName($db, 'sc_sites', 'site_url');
+            if ($ancienIndex) {
+                $db->exec("ALTER TABLE sc_sites DROP INDEX `{$ancienIndex}`");
             }
             // Ajouter la nouvelle contrainte unique (site_url + user_id)
-            try {
+            if (!self::indexExists($db, 'sc_sites', 'uq_sc_site_user')) {
                 $db->exec("ALTER TABLE sc_sites ADD UNIQUE KEY uq_sc_site_user (site_url, user_id)");
-            } catch (\Throwable $e) {
-                // Ignorer si elle existe déjà
             }
         }
 
@@ -72,6 +64,25 @@ class AutoMigrate
         $stmt = $db->prepare("SHOW COLUMNS FROM `{$table}` LIKE :col");
         $stmt->execute(['col' => $column]);
         return $stmt->rowCount() > 0;
+    }
+
+    /** Vérifie si un index existe dans une table. */
+    private static function indexExists(PDO $db, string $table, string $indexName): bool
+    {
+        $stmt = $db->prepare("SHOW INDEX FROM `{$table}` WHERE Key_name = :idx");
+        $stmt->execute(['idx' => $indexName]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /** Trouve le nom de l'index UNIQUE sur une colonne donnée (premier trouvé). */
+    private static function findIndexName(PDO $db, string $table, string $columnName): ?string
+    {
+        $stmt = $db->prepare(
+            "SHOW INDEX FROM `{$table}` WHERE Column_name = :col AND Non_unique = 0"
+        );
+        $stmt->execute(['col' => $columnName]);
+        $row = $stmt->fetch();
+        return $row ? $row['Key_name'] : null;
     }
 
     private static function getSchema(): string
