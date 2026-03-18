@@ -26,8 +26,22 @@ class SearchConsoleAPI
         $client = $auth->getAuthenticatedClient();
         $this->service   = new SearchConsole($client);
         $this->rowLimit   = (int) ($_ENV['SYNC_ROW_LIMIT']   ?? 25000);
-        $this->maxRetries = (int) ($_ENV['SYNC_MAX_RETRIES'] ?? 3);
-        $this->retryDelay = (int) ($_ENV['SYNC_RETRY_DELAY'] ?? 5);
+
+        // Mode plateforme : lire les parametres de retry depuis HttpConfig
+        if (defined('PLATFORM_EMBEDDED') && class_exists(\Platform\Http\HttpConfig::class)) {
+            try {
+                $config = \Platform\Http\HttpConfig::charger();
+                $this->maxRetries = $config->apiMaxRetries;
+                $this->retryDelay = (int) ceil($config->apiBackoffMs / 1000);
+            } catch (\Throwable) {
+                // Fallback sur les variables d'environnement
+                $this->maxRetries = (int) ($_ENV['SYNC_MAX_RETRIES'] ?? 3);
+                $this->retryDelay = (int) ($_ENV['SYNC_RETRY_DELAY'] ?? 5);
+            }
+        } else {
+            $this->maxRetries = (int) ($_ENV['SYNC_MAX_RETRIES'] ?? 3);
+            $this->retryDelay = (int) ($_ENV['SYNC_RETRY_DELAY'] ?? 5);
+        }
     }
 
     /**
