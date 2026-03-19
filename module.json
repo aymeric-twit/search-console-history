@@ -11,8 +11,7 @@
     "display_mode": "embedded",
     "env_keys": [
         "GOOGLE_CLIENT_ID",
-        "GOOGLE_CLIENT_SECRET",
-        "GOOGLE_REDIRECT_URI"
+        "GOOGLE_CLIENT_SECRET"
     ],
     "api_doc_url": "https://developers.google.com/webmaster-tools/v1/how-tos/authorizing",
     "languages": [],
@@ -114,5 +113,8 @@
             "method": "POST",
             "type": "ajax"
         }
-    ]
+    ],
+    "credits_par_analyse": 0,
+    "units_per_credit": 1,
+    "unit_label": "requêtes"
 }
