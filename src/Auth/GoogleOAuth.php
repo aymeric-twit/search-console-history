@@ -25,11 +25,31 @@ class GoogleOAuth
         $this->client = new GoogleClient();
         $this->client->setClientId($_ENV['GOOGLE_CLIENT_ID']);
         $this->client->setClientSecret($_ENV['GOOGLE_CLIENT_SECRET']);
-        $this->client->setRedirectUri($_ENV['GOOGLE_REDIRECT_URI']);
+        $this->client->setRedirectUri(self::construireUriRedirection());
         $this->client->addScope('https://www.googleapis.com/auth/webmasters.readonly');
         $this->client->setAccessType('offline');
         $this->client->setPrompt('consent');
         $this->client->setIncludeGrantedScopes(true);
+    }
+
+    /**
+     * Construit la redirect URI automatiquement depuis le contexte HTTP.
+     */
+    private static function construireUriRedirection(): string
+    {
+        $enPlateforme = defined('PLATFORM_EMBEDDED')
+            || (isset($_SERVER['REQUEST_URI']) && str_contains($_SERVER['REQUEST_URI'], '/m/search-console-history/'));
+
+        if ($enPlateforme) {
+            $protocole = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $hote      = $_SERVER['HTTP_HOST'] ?? 'localhost';
+
+            return $protocole . '://' . $hote . '/m/search-console-history/auth/callback';
+        }
+
+        $appUrl = getenv('APP_URL') ?: 'http://localhost:8080';
+
+        return rtrim($appUrl, '/') . '/auth/callback';
     }
 
     /** Retourne l'URL Google pour démarrer le flux OAuth. */

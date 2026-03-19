@@ -15,7 +15,7 @@ date_default_timezone_set($_ENV['APP_TIMEZONE'] ?? 'Europe/Paris');
 
 // Propager les clés Google depuis le .env plateforme vers getenv()
 // Si les clés sont vides côté plateforme, tenter le .env local du plugin (fallback standalone)
-$clesGoogle = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REDIRECT_URI'];
+$clesGoogle = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'];
 $besoinFallback = false;
 foreach ($clesGoogle as $cle) {
     $val = $_ENV[$cle] ?? '';
