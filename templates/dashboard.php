@@ -11,7 +11,7 @@ ob_start();
 <div class="col-lg-8">
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h2><i class="bi bi-graph-up"></i> Google Search Console</h2>
+        <h2><i class="bi bi-graph-up"></i> <span data-i18n="gsc.titre">Google Search Console</span></h2>
     </div>
     <div class="card-body">
 
@@ -19,19 +19,19 @@ ob_start();
         <div id="gsc-connexion-section" class="mb-3">
             <div class="d-flex align-items-center gap-3 mb-3">
                 <span id="gsc-badge-statut" class="gsc-status-badge gsc-status-deconnecte">
-                    <i class="bi bi-circle-fill"></i> <span id="gsc-badge-text">Vérification...</span>
+                    <i class="bi bi-circle-fill"></i> <span id="gsc-badge-text" data-i18n="gsc.verification">Vérification...</span>
                 </span>
                 <button type="button" class="btn btn-sm btn-primary d-none" id="btn-connecter-gsc" onclick="connecterGsc()">
-                    <i class="bi bi-google"></i> Connecter Google Search Console
+                    <i class="bi bi-google"></i> <span data-i18n="gsc.connecter">Connecter Google Search Console</span>
                 </button>
                 <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="btn-deconnecter-gsc" onclick="deconnecterGsc()">
-                    <i class="bi bi-box-arrow-left"></i> Déconnecter
+                    <i class="bi bi-box-arrow-left"></i> <span data-i18n="gsc.deconnecter">Déconnecter</span>
                 </button>
             </div>
             <div id="gsc-erreur-oauth" class="alert alert-danger d-none" role="alert"></div>
             <div id="gsc-non-configure" class="alert alert-warning d-none">
                 <i class="bi bi-exclamation-triangle me-1"></i>
-                La connexion Google Search Console n'est pas disponible. Contactez l'administrateur.
+                <span data-i18n="gsc.nonConfigure">La connexion Google Search Console n'est pas disponible. Contactez l'administrateur.</span>
             </div>
         </div>
 
@@ -39,7 +39,7 @@ ob_start();
         <form id="dashboard-filters" method="GET" action="<?= $prefix ?>/" class="<?= ($authenticated && !empty($sites)) ? '' : 'd-none' ?>">
             <div class="row g-3 mb-3">
                 <div class="col-md-3">
-                    <label for="site_id" class="form-label">Propriété GSC</label>
+                    <label for="site_id" class="form-label" data-i18n="filtres.propriete">Propriété GSC</label>
                     <select name="site_id" id="site_id" class="form-select">
                         <?php foreach ($sites ?? [] as $s): ?>
                             <option value="<?= $s['id'] ?>" <?= ($s['id'] ?? 0) == ($siteId ?? 0) ? 'selected' : '' ?>>
@@ -49,24 +49,24 @@ ob_start();
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label for="from" class="form-label">Date de début</label>
+                    <label for="from" class="form-label" data-i18n="filtres.dateDebut">Date de début</label>
                     <input type="date" name="from" id="from" class="form-control" value="<?= htmlspecialchars($from ?? '') ?>">
                 </div>
                 <div class="col-md-2">
-                    <label for="to" class="form-label">Date de fin</label>
+                    <label for="to" class="form-label" data-i18n="filtres.dateFin">Date de fin</label>
                     <input type="date" name="to" id="to" class="form-control" value="<?= htmlspecialchars($to ?? '') ?>">
                 </div>
                 <div class="col-md-2">
-                    <label for="device" class="form-label">Appareil</label>
+                    <label for="device" class="form-label" data-i18n="filtres.appareil">Appareil</label>
                     <select name="device" id="device" class="form-select">
-                        <option value="">Tous</option>
+                        <option value="" data-i18n="filtres.tous">Tous</option>
                         <option value="DESKTOP" <?= ($filters['device'] ?? '') === 'DESKTOP' ? 'selected' : '' ?>>Desktop</option>
                         <option value="MOBILE" <?= ($filters['device'] ?? '') === 'MOBILE' ? 'selected' : '' ?>>Mobile</option>
                         <option value="TABLET" <?= ($filters['device'] ?? '') === 'TABLET' ? 'selected' : '' ?>>Tablet</option>
                     </select>
                 </div>
                 <div class="col-md-1">
-                    <label for="country" class="form-label">Pays</label>
+                    <label for="country" class="form-label" data-i18n="filtres.pays">Pays</label>
                     <input type="text" name="country" id="country" class="form-control" placeholder="FRA" value="<?= htmlspecialchars($filters['country'] ?? '') ?>">
                 </div>
             </div>
@@ -74,30 +74,30 @@ ob_start();
             <!-- Filtres avancés -->
             <div class="mb-3">
                 <a class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" href="#filtres-avances" role="button">
-                    <i class="bi bi-sliders"></i> Filtres avancés
+                    <i class="bi bi-sliders"></i> <span data-i18n="filtres.avances">Filtres avancés</span>
                 </a>
                 <div class="collapse mt-2" id="filtres-avances">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <label for="filter_query" class="form-label">Requête</label>
-                            <input type="text" name="filter_query" id="filter_query" class="form-control" placeholder="Filtrer par mot-clé..." value="<?= htmlspecialchars($filters['query'] ?? '') ?>">
+                            <label for="filter_query" class="form-label" data-i18n="filtres.requete">Requête</label>
+                            <input type="text" name="filter_query" id="filter_query" class="form-control" data-i18n-placeholder="filtres.requetePlaceholder" placeholder="Filtrer par mot-clé..." value="<?= htmlspecialchars($filters['query'] ?? '') ?>">
                         </div>
                         <div class="col-md-4">
-                            <label for="filter_page" class="form-label">Page</label>
-                            <input type="text" name="filter_page" id="filter_page" class="form-control" placeholder="/chemin..." value="<?= htmlspecialchars($filters['page'] ?? '') ?>">
+                            <label for="filter_page" class="form-label" data-i18n="filtres.page">Page</label>
+                            <input type="text" name="filter_page" id="filter_page" class="form-control" data-i18n-placeholder="filtres.pagePlaceholder" placeholder="/chemin..." value="<?= htmlspecialchars($filters['page'] ?? '') ?>">
                         </div>
                     </div>
                 </div>
             </div>
 
             <button type="submit" class="btn btn-primary">
-                <i class="bi bi-funnel"></i> Filtrer
+                <i class="bi bi-funnel"></i> <span data-i18n="filtres.filtrer">Filtrer</span>
             </button>
         </form>
 
         <?php if ($authenticated && empty($sites ?? [])): ?>
         <p class="text-muted mt-2 mb-0">
-            Aucun site importé. <a href="<?= $prefix ?>/sync-status">Lancez une synchronisation</a> pour importer vos propriétés.
+            <span data-i18n="filtres.aucunSite">Aucun site importé.</span> <a href="<?= $prefix ?>/sync-status" data-i18n="filtres.lancerSync">Lancez une synchronisation</a> <span data-i18n="filtres.pourImporter">pour importer vos propriétés.</span>
         </p>
         <?php endif; ?>
 
@@ -107,21 +107,21 @@ ob_start();
 <div class="col-lg-4" id="helpPanel">
     <div class="config-help-panel">
         <div class="help-title mb-2">
-            <i class="bi bi-info-circle me-1"></i> Comment ça marche
+            <i class="bi bi-info-circle me-1"></i> <span data-i18n="aide.commentCaMarche">Comment ça marche</span>
         </div>
         <ul>
-            <li><strong>Connexion OAuth</strong> : connectez votre compte Google pour accéder à Search Console.</li>
-            <li><strong>Synchronisation</strong> : les données sont synchronisées automatiquement.</li>
-            <li><strong>Tendances</strong> : consultez les tendances quotidiennes (clics, impressions, CTR, position).</li>
-            <li><strong>Segments</strong> : filtrez par requête, page, appareil et pays.</li>
-            <li><strong>Comparaison</strong> : comparez deux périodes pour détecter les évolutions.</li>
+            <li><strong data-i18n="aide.connexionOauth">Connexion OAuth</strong> : <span data-i18n="aide.connexionOauthDesc">connectez votre compte Google pour accéder à Search Console.</span></li>
+            <li><strong data-i18n="aide.synchronisation">Synchronisation</strong> : <span data-i18n="aide.synchronisationDesc">les données sont synchronisées automatiquement.</span></li>
+            <li><strong data-i18n="aide.tendances">Tendances</strong> : <span data-i18n="aide.tendancesDesc">consultez les tendances quotidiennes (clics, impressions, CTR, position).</span></li>
+            <li><strong data-i18n="aide.segments">Segments</strong> : <span data-i18n="aide.segmentsDesc">filtrez par requête, page, appareil et pays.</span></li>
+            <li><strong data-i18n="aide.comparaison">Comparaison</strong> : <span data-i18n="aide.comparaisonDesc">comparez deux périodes pour détecter les évolutions.</span></li>
         </ul>
         <hr>
         <div class="help-title mb-2">
-            <i class="bi bi-infinity me-1"></i> Quota
+            <i class="bi bi-infinity me-1"></i> <span data-i18n="aide.quota">Quota</span>
         </div>
         <ul class="mb-0">
-            <li>Aucun quota — synchronisation illimitée.</li>
+            <li data-i18n="aide.quotaDesc">Aucun quota — synchronisation illimitée.</li>
         </ul>
     </div>
 </div>
@@ -132,22 +132,22 @@ ob_start();
 <!-- KPI Cards -->
 <div class="kpi-grid">
     <div class="kpi-card">
-        <div class="label">Clicks</div>
+        <div class="label" data-i18n="kpi.clicks">Clicks</div>
         <div class="value" id="kpi-clicks">...</div>
         <div class="diff" id="kpi-clicks-diff"></div>
     </div>
     <div class="kpi-card">
-        <div class="label">Impressions</div>
+        <div class="label" data-i18n="kpi.impressions">Impressions</div>
         <div class="value" id="kpi-impressions">...</div>
         <div class="diff" id="kpi-impressions-diff"></div>
     </div>
     <div class="kpi-card">
-        <div class="label">CTR moyen</div>
+        <div class="label" data-i18n="kpi.ctrMoyen">CTR moyen</div>
         <div class="value" id="kpi-ctr">...</div>
         <div class="diff" id="kpi-ctr-diff"></div>
     </div>
     <div class="kpi-card">
-        <div class="label">Position moyenne</div>
+        <div class="label" data-i18n="kpi.positionMoyenne">Position moyenne</div>
         <div class="value" id="kpi-position">...</div>
         <div class="diff" id="kpi-position-diff"></div>
     </div>
@@ -155,18 +155,18 @@ ob_start();
 
 <!-- Graphique tendance -->
 <div class="chart-container">
-    <h3>Tendance quotidienne</h3>
+    <h3 data-i18n="graphique.tendance">Tendance quotidienne</h3>
     <canvas id="trendChart" height="100"></canvas>
 </div>
 
 <!-- Graphiques appareils + pays -->
 <div class="grid-2">
     <div class="chart-container">
-        <h3>Répartition par appareil</h3>
+        <h3 data-i18n="graphique.appareils">Répartition par appareil</h3>
         <canvas id="deviceChart" height="200"></canvas>
     </div>
     <div class="chart-container">
-        <h3>Top pays</h3>
+        <h3 data-i18n="graphique.topPays">Top pays</h3>
         <canvas id="countryChart" height="200"></canvas>
     </div>
 </div>
@@ -174,37 +174,37 @@ ob_start();
 <!-- Tableaux Top Requêtes + Top Pages -->
 <div class="grid-2">
     <div class="data-table-wrap">
-        <h3>Top requêtes</h3>
+        <h3 data-i18n="tableau.topRequetes">Top requêtes</h3>
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Requête</th>
-                    <th>Clicks</th>
-                    <th>Impressions</th>
-                    <th>CTR</th>
-                    <th>Position</th>
+                    <th data-i18n="tableau.requete">Requête</th>
+                    <th data-i18n="tableau.clicks">Clicks</th>
+                    <th data-i18n="tableau.impressions">Impressions</th>
+                    <th data-i18n="tableau.ctr">CTR</th>
+                    <th data-i18n="tableau.position">Position</th>
                 </tr>
             </thead>
             <tbody id="queries-body">
-                <tr><td colspan="5" style="text-align:center;color:#999">Chargement...</td></tr>
+                <tr><td colspan="5" style="text-align:center;color:#999" data-i18n="tableau.chargement">Chargement...</td></tr>
             </tbody>
         </table>
     </div>
 
     <div class="data-table-wrap">
-        <h3>Top pages</h3>
+        <h3 data-i18n="tableau.topPages">Top pages</h3>
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Page</th>
-                    <th>Clicks</th>
-                    <th>Impressions</th>
-                    <th>CTR</th>
-                    <th>Position</th>
+                    <th data-i18n="tableau.page">Page</th>
+                    <th data-i18n="tableau.clicks">Clicks</th>
+                    <th data-i18n="tableau.impressions">Impressions</th>
+                    <th data-i18n="tableau.ctr">CTR</th>
+                    <th data-i18n="tableau.position">Position</th>
                 </tr>
             </thead>
             <tbody id="pages-body">
-                <tr><td colspan="5" style="text-align:center;color:#999">Chargement...</td></tr>
+                <tr><td colspan="5" style="text-align:center;color:#999" data-i18n="tableau.chargement">Chargement...</td></tr>
             </tbody>
         </table>
     </div>
@@ -225,12 +225,12 @@ ob_start();
             } else {
                 var erreurEl = document.getElementById('gsc-erreur-oauth');
                 if (erreurEl) {
-                    erreurEl.textContent = e.data.erreur || 'Erreur de connexion';
+                    erreurEl.textContent = e.data.erreur || t('gsc.erreurConnexion');
                     erreurEl.classList.remove('d-none');
                 }
                 // Rétablir le bouton
                 var btn = document.getElementById('btn-connecter-gsc');
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-google"></i> Connecter Google Search Console'; }
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-google"></i> ' + t('gsc.connecter'); }
             }
         }
     });
@@ -270,7 +270,7 @@ ob_start();
             badge.className = 'gsc-status-badge ' + (connecte ? 'gsc-status-connecte' : 'gsc-status-deconnecte');
         }
         if (badgeText) {
-            badgeText.textContent = connecte ? 'Connecté' : 'Non connecté';
+            badgeText.textContent = connecte ? t('gsc.connecte') : t('gsc.nonConnecte');
         }
         if (btnConn) btnConn.classList.toggle('d-none', connecte);
         if (btnDeco) btnDeco.classList.toggle('d-none', !connecte);
@@ -279,7 +279,7 @@ ob_start();
     // ── Connecter : ouvrir popup OAuth ──
     window.connecterGsc = function() {
         var btn = document.getElementById('btn-connecter-gsc');
-        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Connexion...'; }
+        if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> ' + t('gsc.connexion'); }
 
         // Masquer l'erreur précédente
         var erreurEl = document.getElementById('gsc-erreur-oauth');
@@ -299,19 +299,19 @@ ob_start();
                     );
                 } else {
                     if (erreurEl) {
-                        erreurEl.textContent = data.error || 'Erreur de connexion';
+                        erreurEl.textContent = data.error || t('gsc.erreurConnexion');
                         erreurEl.classList.remove('d-none');
                     }
                 }
             })
             .catch(function() {
                 if (erreurEl) {
-                    erreurEl.textContent = 'Erreur réseau';
+                    erreurEl.textContent = t('gsc.erreurReseau');
                     erreurEl.classList.remove('d-none');
                 }
             })
             .finally(function() {
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-google"></i> Connecter Google Search Console'; }
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="bi bi-google"></i> ' + t('gsc.connecter'); }
             });
     };
 
@@ -396,7 +396,7 @@ ob_start();
         // Top requêtes
         var tbodyQ = document.getElementById('queries-body');
         if (!queries.length) {
-            tbodyQ.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Aucune donnée</td></tr>';
+            tbodyQ.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">' + t('tableau.aucuneDonnee') + '</td></tr>';
         } else {
             tbodyQ.innerHTML = queries.map(function(q) {
                 return '<tr>'
@@ -412,7 +412,7 @@ ob_start();
         // Top pages
         var tbodyP = document.getElementById('pages-body');
         if (!pages.length) {
-            tbodyP.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Aucune donnée</td></tr>';
+            tbodyP.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">' + t('tableau.aucuneDonnee') + '</td></tr>';
         } else {
             tbodyP.innerHTML = pages.map(function(pg) {
                 return '<tr>'
@@ -435,7 +435,7 @@ ob_start();
         suffix = suffix || '';
         var n = Number(val);
         var sign = n >= 0 ? '+' : '';
-        el.textContent = sign + n.toFixed(decimals).replace('.', ',') + suffix + ' vs période préc.';
+        el.textContent = sign + n.toFixed(decimals).replace('.', ',') + suffix + ' ' + t('kpi.vsPeriodePrec');
         var positive = invertColor ? n <= 0 : n >= 0;
         el.className = 'diff ' + (positive ? 'positive' : 'negative');
     }

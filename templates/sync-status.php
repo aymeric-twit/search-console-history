@@ -5,29 +5,29 @@ $authenticated = true; // sync-status n'est accessible que si connecté
 ob_start();
 ?>
 
-<h2 style="margin-bottom:1rem">Historique des synchronisations</h2>
+<h2 style="margin-bottom:1rem" data-i18n="sync.titre">Historique des synchronisations</h2>
 
 <div style="margin-bottom:1rem; display:flex; align-items:center; gap:1rem">
     <form style="display:flex; align-items:center; gap:0.5rem" id="syncForm">
         <select name="site_id" id="sync_site_id">
-            <option value="">Tous les sites</option>
+            <option value="" data-i18n="sync.tousLesSites">Tous les sites</option>
             <?php foreach ($sites as $s): ?>
                 <option value="<?= $s['id'] ?>">
                     <?= htmlspecialchars($s['label'] ?: $s['site_url']) ?>
                 </option>
             <?php endforeach; ?>
         </select>
-        <button type="submit" class="btn" id="syncBtn">Lancer la synchronisation</button>
+        <button type="submit" class="btn" id="syncBtn" data-i18n="sync.lancer">Lancer la synchronisation</button>
     </form>
     <?php if (empty($sites)): ?>
-        <span style="color:#999; font-size:0.9em">Aucun site importe — la premiere sync importera vos sites depuis Google.</span>
+        <span style="color:#999; font-size:0.9em" data-i18n="sync.aucunSiteImporte">Aucun site importé — la première sync importera vos sites depuis Google.</span>
     <?php endif; ?>
 </div>
 
-<!-- Progress bar (masque par defaut) -->
+<!-- Progress bar (masqué par défaut) -->
 <div class="sync-progress-card" id="syncProgress" style="display:none">
-    <h3>Synchronisation en cours</h3>
-    <div class="sync-status-label" id="syncStatusLabel">Demarrage...</div>
+    <h3 data-i18n="sync.enCours">Synchronisation en cours</h3>
+    <div class="sync-status-label" id="syncStatusLabel" data-i18n="sync.demarrage">Démarrage...</div>
     <div class="progress-bar-track">
         <div class="progress-bar-fill" id="syncBarFill" style="width:0%"></div>
     </div>
@@ -39,18 +39,18 @@ ob_start();
     <table class="data-table">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Site</th>
-                <th>Type</th>
-                <th>Periode</th>
-                <th>Lignes</th>
-                <th>Inserees</th>
-                <th>New</th>
-                <th>Maj</th>
-                <th>Duree</th>
-                <th>Statut</th>
-                <th>Erreur</th>
-                <th>Date</th>
+                <th data-i18n="syncTab.id">ID</th>
+                <th data-i18n="syncTab.site">Site</th>
+                <th data-i18n="syncTab.type">Type</th>
+                <th data-i18n="syncTab.periode">Période</th>
+                <th data-i18n="syncTab.lignes">Lignes</th>
+                <th data-i18n="syncTab.inserees">Insérées</th>
+                <th data-i18n="syncTab.new">New</th>
+                <th data-i18n="syncTab.maj">Maj</th>
+                <th data-i18n="syncTab.duree">Durée</th>
+                <th data-i18n="syncTab.statut">Statut</th>
+                <th data-i18n="syncTab.erreur">Erreur</th>
+                <th data-i18n="syncTab.date">Date</th>
             </tr>
         </thead>
         <tbody>
@@ -67,13 +67,13 @@ ob_start();
                 <td class="num"><?= $log['duration_sec'] ? number_format($log['duration_sec'], 1) . 's' : '-' ?></td>
                 <td>
                     <?php if ($log['status'] === 'success'): ?>
-                        <span class="badge badge-success">OK</span>
+                        <span class="badge badge-success" data-i18n="syncTab.ok">OK</span>
                     <?php elseif ($log['status'] === 'empty'): ?>
-                        <span class="badge badge-empty">Vide</span>
+                        <span class="badge badge-empty" data-i18n="syncTab.vide">Vide</span>
                     <?php elseif ($log['status'] === 'error'): ?>
-                        <span class="badge badge-error">Erreur</span>
+                        <span class="badge badge-error" data-i18n="syncTab.erreurBadge">Erreur</span>
                     <?php else: ?>
-                        <span class="badge badge-running">En cours</span>
+                        <span class="badge badge-running" data-i18n="syncTab.enCours">En cours</span>
                     <?php endif; ?>
                 </td>
                 <td class="truncate" style="max-width:250px"><?= htmlspecialchars($log['error_message'] ?? '') ?></td>
@@ -81,7 +81,7 @@ ob_start();
             </tr>
             <?php endforeach; ?>
             <?php if (empty($logs)): ?>
-            <tr><td colspan="12" style="text-align:center;color:#999">Aucune synchronisation enregistree</td></tr>
+            <tr><td colspan="12" style="text-align:center;color:#999" data-i18n="syncTab.aucuneSync">Aucune synchronisation enregistrée</td></tr>
             <?php endif; ?>
         </tbody>
     </table>
@@ -104,7 +104,7 @@ ob_start();
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         btn.disabled = true;
-        btn.textContent = 'Demarrage...';
+        btn.textContent = t('sync.demarrage');
 
         var siteId = document.getElementById('sync_site_id').value;
         var url = baseUrl + '/api/sync' + (siteId ? '?site_id=' + siteId : '');
@@ -126,7 +126,7 @@ ob_start();
             })
             .catch(function() {
                 btn.disabled = false;
-                btn.textContent = 'Lancer la synchronisation';
+                btn.textContent = t('sync.lancer');
             });
     });
 
@@ -135,13 +135,13 @@ ob_start();
         barFill.style.width = '0%';
         barFill.className = 'progress-bar-fill';
         percentEl.textContent = '0 %';
-        statusLabel.textContent = 'Demarrage...';
+        statusLabel.textContent = t('sync.demarrage');
         taskList.innerHTML = '';
     }
 
     function startPolling() {
         if (pollTimer) clearInterval(pollTimer);
-        poll(); // premier appel immediat
+        poll(); // premier appel immédiat
         pollTimer = setInterval(poll, 2000);
     }
 
@@ -156,12 +156,12 @@ ob_start();
                 if (data.status === 'success' || data.status === 'error') {
                     clearInterval(pollTimer);
                     pollTimer = null;
-                    // Auto-reload apres 3s
+                    // Auto-reload après 3s
                     setTimeout(function() { location.reload(); }, 3000);
                 }
             })
             .catch(function() {
-                // Ignorer les erreurs reseau, on reessaye au prochain tick
+                // Ignorer les erreurs réseau, on réessaye au prochain tick
             });
     }
 
@@ -170,7 +170,7 @@ ob_start();
         var completed = data.completed_tasks || 0;
         var current = data.current_task;
 
-        // Calcul du pourcentage avec granularite chunks
+        // Calcul du pourcentage avec granularité chunks
         var percent = 0;
         if (total > 0) {
             var chunkFraction = 0;
@@ -194,43 +194,43 @@ ob_start();
 
         // Label de statut
         if (data.status === 'pending') {
-            statusLabel.textContent = 'En attente de demarrage...';
+            statusLabel.textContent = t('sync.enAttente');
         } else if (data.status === 'running') {
             if (current) {
                 statusLabel.textContent = current.site_url + ' (' + current.search_type + ') — chunk ' + current.done_chunks + '/' + current.total_chunks;
             } else {
-                statusLabel.textContent = 'Synchronisation en cours... (' + completed + '/' + total + ' taches)';
+                statusLabel.textContent = t('sync.syncEnCours') + ' (' + completed + '/' + total + ' ' + t('sync.taches') + ')';
             }
         } else if (data.status === 'success') {
-            statusLabel.textContent = 'Synchronisation terminee ! Rechargement dans 3s...';
+            statusLabel.textContent = t('sync.terminee');
             btn.disabled = false;
-            btn.textContent = 'Lancer la synchronisation';
+            btn.textContent = t('sync.lancer');
         } else if (data.status === 'error') {
-            statusLabel.textContent = 'Erreur : ' + (data.error_message || 'inconnue');
+            statusLabel.textContent = t('sync.erreur') + ' ' + (data.error_message || t('sync.inconnue'));
             btn.disabled = false;
-            btn.textContent = 'Lancer la synchronisation';
+            btn.textContent = t('sync.lancer');
         }
 
-        // Liste des taches
+        // Liste des tâches
         var html = '';
 
-        // Taches terminees
+        // Tâches terminées
         if (data.completed_list) {
-            data.completed_list.forEach(function(t) {
-                var cls = t.status === 'success' ? 'completed' : (t.status === 'empty' ? 'completed' : 'error');
-                var icon = t.status === 'success' ? '&#10003;' : (t.status === 'empty' ? '&#9898;' : '&#10007;');
-                var detail = t.status === 'empty'
-                    ? 'vide, ' + t.duration_sec.toFixed(1) + 's'
-                    : t.rows_fetched + ' lignes (' + (t.rows_new || 0) + ' new, ' + (t.rows_updated || 0) + ' maj), ' + t.duration_sec.toFixed(1) + 's';
+            data.completed_list.forEach(function(tsk) {
+                var cls = tsk.status === 'success' ? 'completed' : (tsk.status === 'empty' ? 'completed' : 'error');
+                var icon = tsk.status === 'success' ? '&#10003;' : (tsk.status === 'empty' ? '&#9898;' : '&#10007;');
+                var detail = tsk.status === 'empty'
+                    ? t('sync.vide') + ', ' + tsk.duration_sec.toFixed(1) + 's'
+                    : tsk.rows_fetched + ' ' + t('sync.lignes') + ' (' + (tsk.rows_new || 0) + ' new, ' + (tsk.rows_updated || 0) + ' maj), ' + tsk.duration_sec.toFixed(1) + 's';
                 html += '<li class="sync-task-item ' + cls + '">'
                     + '<span class="task-icon">' + icon + '</span>'
-                    + '<span>' + escapeHtml(t.site_url) + ' (' + t.search_type + ')'
+                    + '<span>' + escapeHtml(tsk.site_url) + ' (' + tsk.search_type + ')'
                     + ' — ' + detail
                     + '</span></li>';
             });
         }
 
-        // Tache en cours
+        // Tâche en cours
         if (current && data.status === 'running') {
             html += '<li class="sync-task-item running">'
                 + '<span class="task-icon spinner-icon">&#9696;</span>'
@@ -248,14 +248,14 @@ ob_start();
         return div.innerHTML;
     }
 
-    // Detection au chargement : verifier s'il y a un sync en cours
+    // Détection au chargement : vérifier s'il y a un sync en cours
     fetch(baseUrl + '/api/sync-progress')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             if (data.status === 'pending' || data.status === 'running') {
                 currentJobId = data.job_id;
                 btn.disabled = true;
-                btn.textContent = 'Sync en cours...';
+                btn.textContent = t('sync.syncEnCoursBtn');
                 showProgress();
                 updateUI(data);
                 startPolling();

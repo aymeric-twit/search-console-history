@@ -34,7 +34,7 @@ function renderTrendChart(trend) {
             labels: labels,
             datasets: [
                 {
-                    label: 'Clicks',
+                    label: t('chart.clicks'),
                     data: trend.map(r => parseInt(r.clicks)),
                     borderColor: '#1a73e8',
                     backgroundColor: 'rgba(26,115,232,.1)',
@@ -43,7 +43,7 @@ function renderTrendChart(trend) {
                     yAxisID: 'y',
                 },
                 {
-                    label: 'Impressions',
+                    label: t('chart.impressions'),
                     data: trend.map(r => parseInt(r.impressions)),
                     borderColor: '#34a853',
                     backgroundColor: 'rgba(52,168,83,.1)',
@@ -67,13 +67,13 @@ function renderTrendChart(trend) {
                 y: {
                     type: 'linear',
                     position: 'left',
-                    title: { display: true, text: 'Clicks' },
+                    title: { display: true, text: t('chart.clicks') },
                     beginAtZero: true,
                 },
                 y1: {
                     type: 'linear',
                     position: 'right',
-                    title: { display: true, text: 'Impressions' },
+                    title: { display: true, text: t('chart.impressions') },
                     beginAtZero: true,
                     grid: { drawOnChartArea: false },
                 },
@@ -113,7 +113,7 @@ function renderCountryChart(countries) {
         data: {
             labels: countries.map(c => c.country),
             datasets: [{
-                label: 'Clicks',
+                label: t('chart.clicks'),
                 data: countries.map(c => parseInt(c.clicks)),
                 backgroundColor: '#1a73e8',
             }]

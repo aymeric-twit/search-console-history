@@ -12,15 +12,24 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?= $prefix ?>/assets/css/app.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+    <script src="<?= $prefix ?>/assets/js/translations.js"></script>
 </head>
 <body>
     <header class="navbar">
         <h1>Search Console <span>History</span></h1>
         <?php if (!empty($authenticated)): ?>
         <nav>
-            <a href="<?= $prefix ?>/" class="<?= ($currentPage ?? '') === 'dashboard' ? 'active' : '' ?>">Dashboard</a>
-            <a href="<?= $prefix ?>/sync-status" class="<?= ($currentPage ?? '') === 'sync' ? 'active' : '' ?>">Synchronisations</a>
+            <a href="<?= $prefix ?>/" class="<?= ($currentPage ?? '') === 'dashboard' ? 'active' : '' ?>" data-i18n="nav.dashboard">Dashboard</a>
+            <a href="<?= $prefix ?>/sync-status" class="<?= ($currentPage ?? '') === 'sync' ? 'active' : '' ?>" data-i18n="nav.synchronisations">Synchronisations</a>
         </nav>
+        <?php endif; ?>
+        <?php if (!defined('PLATFORM_EMBEDDED')): ?>
+        <select id="lang-select" class="form-select form-select-sm"
+                style="width:auto; background-color:rgba(255,255,255,0.15); color:#fff;
+                       border-color:rgba(255,255,255,0.3); font-size:0.8rem;">
+            <option value="fr">FR</option>
+            <option value="en">EN</option>
+        </select>
         <?php endif; ?>
     </header>
 
