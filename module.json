@@ -10,6 +10,7 @@
     "quota_mode": "none",
     "default_quota": 0,
     "display_mode": "embedded",
+    "crawler_mode": "none",
     "env_keys": [
         "GOOGLE_CLIENT_ID",
         "GOOGLE_CLIENT_SECRET"
